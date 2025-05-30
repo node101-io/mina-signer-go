@@ -3,8 +3,8 @@ package curvebigint
 import (
 	"encoding/json"
 	"errors"
-	"go-signer/curve"
-	"go-signer/field"
+	"github.com/node101-io/mina-signer-go/curve"
+	"github.com/node101-io/mina-signer-go/field"
 	"math/big"
 )
 

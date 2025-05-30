@@ -1,7 +1,7 @@
 package curve
 
 import (
-	"go-signer/field"
+	"github.com/node101-io/mina-signer-go/field"
 	"math/big"
 )
 

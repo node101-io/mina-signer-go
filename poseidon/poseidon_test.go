@@ -1,8 +1,8 @@
 package poseidon
 
 import (
-	"go-signer/constants"
-	"go-signer/field"
+	"github.com/node101-io/mina-signer-go/constants"
+	"github.com/node101-io/mina-signer-go/field"
 	"math/big"
 	"testing"
 )

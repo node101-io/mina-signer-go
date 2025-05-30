@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"go-signer/curvebigint"
-	"go-signer/poseidonbigint"
+	"github.com/node101-io/mina-signer-go/curvebigint"
+	"github.com/node101-io/mina-signer-go/poseidonbigint"
 )
 
 type TestCase struct {

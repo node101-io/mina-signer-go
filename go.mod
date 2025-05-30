@@ -1,4 +1,4 @@
-module go-signer
+module github.com/node101-io/mina-signer-go
 
 go 1.23.5
 

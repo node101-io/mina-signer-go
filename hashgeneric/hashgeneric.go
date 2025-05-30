@@ -1,7 +1,7 @@
 package hashgeneric
 
 import (
-	"go-signer/poseidon"
+	"github.com/node101-io/mina-signer-go/poseidon"
 	"math/big"
 )
 
