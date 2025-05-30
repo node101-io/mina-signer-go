@@ -8,6 +8,7 @@ import (
 	"github.com/node101-io/mina-signer-go/curvebigint"
 	"github.com/node101-io/mina-signer-go/field"
 	"github.com/node101-io/mina-signer-go/hashgeneric"
+	"github.com/node101-io/mina-signer-go/keys"
 	"github.com/node101-io/mina-signer-go/poseidon"
 	"github.com/node101-io/mina-signer-go/poseidonbigint"
 	"github.com/node101-io/mina-signer-go/scalar"
@@ -35,7 +36,7 @@ func SignFieldElement(message *big.Int, priv *big.Int, networkId string) (*Signa
 	return Sign(msg, priv, networkId)
 }
 
-func VerifyFieldElement(sig *Signature, message *big.Int, pub curvebigint.PublicKey, networkId string) bool {
+func VerifyFieldElement(sig *Signature, message *big.Int, pub keys.PublicKey, networkId string) bool {
 	msg := poseidonbigint.HashInput{
 		Fields: []*big.Int{message},
 	}
@@ -43,9 +44,9 @@ func VerifyFieldElement(sig *Signature, message *big.Int, pub curvebigint.Public
 }
 
 func Sign(message poseidonbigint.HashInput, priv *big.Int, networkId string) (*Signature, error) {
-	publicKey := curvebigint.GroupScale(curvebigint.GeneratorMina(), priv)
+	publicKeyGroup := curvebigint.GroupScale(curvebigint.GeneratorMina(), priv)
 	// println("s:", priv.String())
-	kPrime := DeriveNonce(message, publicKey, priv, networkId)
+	kPrime := DeriveNonce(message, publicKeyGroup, priv, networkId)
 	if kPrime.Cmp(big.NewInt(0)) == 0 {
 		return nil, errors.New("sign: derived nonce is 0")
 	}
@@ -63,20 +64,27 @@ func Sign(message poseidonbigint.HashInput, priv *big.Int, networkId string) (*S
 	}
 	// println("k:", k.String())
 
-	e := HashMessage(message, publicKey, rx, networkId)
+	e := HashMessage(message, publicKeyGroup, rx, networkId)
 	// println("e:", e.String())
 	s := field.Fq.Add(k, field.Fq.Mul(e, priv))
 	// println("s:", s.String())
 	return &Signature{R: rx, S: s}, nil
 }
 
-func Verify(sig *Signature, message poseidonbigint.HashInput, pub curvebigint.PublicKey, networkId string) bool {
+func Verify(sig *Signature, message poseidonbigint.HashInput, pub keys.PublicKey, networkId string) bool {
 	r, s := sig.R, sig.S
-	pk := curvebigint.PublicKeyToGroup(pub)
-	e := HashMessage(message, pk, r, networkId)
+
+	pkPoint, err := pub.ToGroup()
+	if err != nil {
+		// log.Printf("Failed to convert PublicKey to Group: %v", err) // Or handle error appropriately
+		return false
+	}
+	pkGroup := curvebigint.Group{X: pkPoint.X, Y: pkPoint.Y}
+
+	e := HashMessage(message, pkGroup, r, networkId)
 
 	S1 := curve.NewPallasCurve().Scale(curve.NewPallasCurve().One, s)
-	S2 := curve.NewPallasCurve().Scale(curvebigint.GroupToProjective(pk), e)
+	S2 := curve.NewPallasCurve().Scale(curvebigint.GroupToProjective(pkGroup), e)
 	R := curve.NewPallasCurve().Sub(S1, S2)
 	Raff, error := curvebigint.GroupFromProjective(R)
 	if error != nil {

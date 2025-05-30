@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/node101-io/mina-signer-go/curvebigint"
+	"github.com/node101-io/mina-signer-go/keys"
 	"github.com/node101-io/mina-signer-go/poseidonbigint"
 )
 
@@ -73,7 +73,8 @@ func TestSignaturesFromJSON(t *testing.T) {
 			continue
 		}
 		signature := &Signature{R: r, S: s}
-		pub := curvebigint.PrivateKeyToPublicKey(priv)
+		privateKey := keys.PrivateKey{Value: priv}
+		pub := privateKey.ToPublicKey()
 
 		msgInput := poseidonbigint.HashInput{
 			Fields: msg,
@@ -150,8 +151,11 @@ func TestInvalidSignature(t *testing.T) {
 		}
 		signature := &Signature{R: r, S: s}
 
-		pub := curvebigint.PrivateKeyToPublicKey(priv)
-		intruder := curvebigint.PrivateKeyToPublicKey(new(big.Int).Add(priv, big.NewInt(1)))
+		privateKey := keys.PrivateKey{Value: priv}
+		pub := privateKey.ToPublicKey()
+		
+		intruderPrivateKey := keys.PrivateKey{Value: new(big.Int).Add(priv, big.NewInt(1))}
+		intruder := intruderPrivateKey.ToPublicKey()
 
 		corruptedMsg := make([]*big.Int, len(msg))
 		copy(corruptedMsg, msg)

@@ -1,0 +1,133 @@
+package keys
+
+import (
+	"encoding/json"
+	"math/big"
+
+	"github.com/node101-io/mina-signer-go/curve"
+	"github.com/node101-io/mina-signer-go/field"
+)
+
+// PublicKey represents a public key with an X coordinate and a boolean indicating if Y is odd.
+type PublicKey struct {
+	X     *big.Int
+	IsOdd bool
+}
+
+// HashInputLegacy is a legacy structure used for hashing PublicKey.
+// It might be specific to certain older hashing schemes.
+type HashInputLegacy struct {
+	Fields []*big.Int
+	Bits   []bool
+}
+
+// IsValid checks if the PublicKey is a valid point on the Pallas curve.
+func (pk *PublicKey) IsValid() bool {
+	curveB := curve.NewPallasCurve().B
+	xCubed := field.Mod(new(big.Int).Mul(pk.X, new(big.Int).Mul(pk.X, pk.X)), field.P)
+	ySquared := field.Mod(new(big.Int).Add(xCubed, curveB), field.P)
+	return field.IsSquare(ySquared, field.P)
+}
+
+// Point represents a point on the curve with X and Y coordinates.
+// TODO: This is a temporary stand-in for curvebigint.Group or curve.GroupAffine.
+//       Decide on a canonical Group/Point type and use it.
+type Point struct {
+	X *big.Int
+	Y *big.Int
+}
+
+// ToGroup reconstructs the full curve point (Group) from a compressed PublicKey.
+// It returns an error if the x-coordinate is invalid.
+func (pk *PublicKey) ToGroup() (Point, error) {
+	x := pk.X
+	x2 := field.Fp.Mul(x, x)
+	x3 := field.Fp.Mul(x2, x)
+	ySquared := field.Fp.Add(x3, curve.NewPallasCurve().B)
+	y := field.Fp.Sqrt(ySquared)
+	if y == nil {
+		// Original code panics here. Consider returning an error instead for robust handling.
+		panic("PublicKey.ToGroup: invalid x coordinate")
+	}
+	yIsOdd := y.Bit(0) == 1
+	if pk.IsOdd != yIsOdd {
+		y = field.Fp.Negate(y)
+	}
+	return Point{X: x, Y: y}, nil
+}
+
+// PublicKeyFromPoint creates a PublicKey from a curve Point (X, Y coordinates).
+func PublicKeyFromPoint(p Point) PublicKey {
+	return PublicKey{
+		X:     p.X,
+		IsOdd: isOdd(p.Y), // isOdd is an internal helper
+	}
+}
+
+// Equal checks if two PublicKeys are identical.
+func (pk *PublicKey) Equal(other PublicKey) bool {
+	if pk.X == nil && other.X == nil {
+		return pk.IsOdd == other.IsOdd
+	}
+	if pk.X == nil || other.X == nil {
+		return false // One is nil, the other is not.
+	}
+	return pk.X.Cmp(other.X) == 0 && pk.IsOdd == other.IsOdd
+}
+
+// ToInputLegacy converts the PublicKey to a legacy format for hashing.
+func (pk *PublicKey) ToInputLegacy() HashInputLegacy {
+	return HashInputLegacy{Fields: []*big.Int{pk.X}, Bits: []bool{pk.IsOdd}}
+}
+
+// MarshalJSON implements the json.Marshaler interface for PublicKey.
+func (pk PublicKey) MarshalJSON() ([]byte, error) {
+	// Guard against nil pk.X if it can occur, as pk.X.String() would panic.
+	var xStr string
+	if pk.X != nil {
+		xStr = pk.X.String()
+	}
+	return json.Marshal(struct {
+		X     string `json:"x"`
+		IsOdd bool   `json:"isOdd"`
+	}{
+		X:     xStr,
+		IsOdd: pk.IsOdd,
+	})
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface for PublicKey.
+func (pk *PublicKey) UnmarshalJSON(data []byte) error {
+	var temp struct {
+		X     string `json:"x"`
+		IsOdd bool   `json:"isOdd"`
+	}
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
+	}
+
+	x := new(big.Int)
+	if temp.X != "" { // Handle case where X might be an empty string in JSON
+		var success bool
+		x, success = new(big.Int).SetString(temp.X, 10)
+		if !success {
+			// Consider returning a more specific error, e.g., fmt.Errorf("failed to parse X '%s' from JSON for PublicKey", temp.X)
+		}
+	} else {
+		// Decide how to handle empty X string: treat as nil, zero, or error.
+		// Assuming nil for now if X can be legitimately nil.
+		x = nil
+	}
+	pk.X = x
+	pk.IsOdd = temp.IsOdd
+	return nil
+}
+
+// isOdd is an internal helper function to check if a big.Int is odd.
+// It safely handles nil inputs, returning false.
+func isOdd(x *big.Int) bool {
+	if x == nil {
+		return false
+	}
+	return x.Bit(0) == 1
+} 
