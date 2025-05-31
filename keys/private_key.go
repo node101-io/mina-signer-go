@@ -1,10 +1,14 @@
 package keys
 
 import (
+	"errors" // For Sign method
 	"fmt"
 	"math/big"
 
-	"github.com/node101-io/mina-signer-go/curvebigint" // For GroupScale and GeneratorMina
+	"github.com/node101-io/mina-signer-go/curvebigint"    // For GroupScale and GeneratorMina
+	"github.com/node101-io/mina-signer-go/field"          // For Fp, Fq operations in Sign
+	"github.com/node101-io/mina-signer-go/poseidonbigint" // For HashInput type
+	"github.com/node101-io/mina-signer-go/signature"      // For returning *signature.Signature
 )
 
 const (
@@ -37,6 +41,60 @@ func (sk PrivateKey) ToPublicKey() PublicKey {
 
 	// 4. Create a PublicKey from the point.
 	return PublicKeyFromPoint(pointForPublicKey)
+}
+
+// Sign generates a Schnorr signature for the given message input.
+// It uses helper functions from the keys package (deriveNonce, hashMessage).
+func (sk PrivateKey) Sign(message poseidonbigint.HashInput, networkId string) (*signature.Signature, error) {
+	if sk.Value == nil {
+		return nil, errors.New("cannot sign with a nil private key value")
+	}
+
+	// 1. Derive the public key point corresponding to this private key.
+	// ToPublicKey() returns keys.PublicKey, then ToGroup() returns keys.Point and an error.
+	// Note: ToPublicKey internally uses curvebigint.GroupScale and GeneratorMina.
+	pubKey := sk.ToPublicKey()
+	publicKeyPoint, err := pubKey.ToGroup() // publicKeyPoint is keys.Point
+	if err != nil {
+		// This might happen if pubKey.X is such that Sqrt results in nil (invalid point)
+		// which shouldn't occur if the private key is valid and ToPublicKey works correctly.
+		return nil, fmt.Errorf("failed to get public key point for signing: %w", err)
+	}
+
+	// 2. Derive nonce (k')
+	kPrime := deriveNonce(message, publicKeyPoint, sk.Value, networkId)
+	if kPrime.Cmp(big.NewInt(0)) == 0 {
+		return nil, errors.New("sign: derived nonce kPrime is 0")
+	}
+
+	// 3. Calculate R = k' * G
+	// We need curvebigint.GroupScale and GeneratorMina for this.
+	rGroupPoint := curvebigint.GroupScale(curvebigint.GeneratorMina(), kPrime) // rGroupPoint is curvebigint.Group
+	rx := rGroupPoint.X
+	ry := rGroupPoint.Y
+
+	// 4. Adjust k based on R_y's parity
+	k := new(big.Int).Set(kPrime)
+	if !field.Fp.IsEven(ry) { // field.Fp must be accessible or this op moved to a place with access
+		k = field.Fq.Negate(kPrime)
+	}
+
+	// 5. Calculate  e = Hash(message || pubKey_x || pubKey_y || R_x)
+	// hashMessage expects keys.Point for the public key part.
+	e := hashMessage(message, publicKeyPoint, rx, networkId)
+
+	// 6. Calculate s = k + e * priv
+	sVal := field.Fq.Add(k, field.Fq.Mul(e, sk.Value))
+
+	return &signature.Signature{R: rx, S: sVal}, nil
+}
+
+// SignFieldElement generates a Schnorr signature for a single field element message.
+func (sk PrivateKey) SignFieldElement(message *big.Int, networkId string) (*signature.Signature, error) {
+	msgInput := poseidonbigint.HashInput{
+		Fields: []*big.Int{message},
+	}
+	return sk.Sign(msgInput, networkId)
 }
 
 // MarshalBytes serializes the PrivateKey into a byte slice.

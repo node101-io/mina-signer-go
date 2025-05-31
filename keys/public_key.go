@@ -6,7 +6,10 @@ import (
 	"math/big"
 
 	"github.com/node101-io/mina-signer-go/curve"
+	"github.com/node101-io/mina-signer-go/curvebigint"
 	"github.com/node101-io/mina-signer-go/field"
+	"github.com/node101-io/mina-signer-go/poseidonbigint"
+	"github.com/node101-io/mina-signer-go/signature"
 )
 
 const (
@@ -191,4 +194,58 @@ func isOdd(x *big.Int) bool {
 		return false
 	}
 	return x.Bit(0) == 1
+}
+
+// Verify checks a Schnorr signature against the public key and message.
+// It uses helper functions from the keys package (hashMessage).
+func (pk PublicKey) Verify(sig *signature.Signature, message poseidonbigint.HashInput, networkId string) bool {
+	if pk.X == nil || sig == nil || sig.R == nil || sig.S == nil {
+		// TODO: Log error or handle more gracefully? For now, mimic original behavior of just returning false.
+		return false
+	}
+
+	// 1. Convert public key to a point (group element)
+	pkPoint, err := pk.ToGroup() // pkPoint is keys.Point
+	if err != nil {
+		return false // If public key can't be converted to a point, verification fails
+	}
+
+	// 2. Calculate e = Hash(message || pubKey_x || pubKey_y || R_x)
+	// hashMessage expects keys.Point
+	e := hashMessage(message, pkPoint, sig.R, networkId)
+
+	// 3. Calculate R' = sG - eP
+	//    sG = s * G (NewPallasCurve().One is G)
+	//    eP = e * pkGroup (pkPoint needs to be in projective form for scaling)
+
+	// Convert pkPoint (keys.Point which is affine-like) to curve.GroupProjective for scaling
+	// curvebigint.Group is also affine-like. We need GroupToProjective.
+	// Create a temporary curvebigint.Group from pkPoint to use GroupToProjective
+	pkCurveBigintGroup := curvebigint.Group{X: pkPoint.X, Y: pkPoint.Y}
+	pkProjective := curvebigint.GroupToProjective(pkCurveBigintGroup)
+
+	pallas := curve.NewPallasCurve()
+	sG := pallas.Scale(pallas.One, sig.S) // sG is GroupProjective
+	eP := pallas.Scale(pkProjective, e)   // eP is GroupProjective
+
+	rPrimeProjective := pallas.Sub(sG, eP) // rPrimeProjective is GroupProjective
+
+	// 4. Convert R' back to affine and check if R'_x == R and R'_y is even.
+	rPrimeAffine, err := curvebigint.GroupFromProjective(rPrimeProjective) // rPrimeAffine is curvebigint.Group
+	if err != nil {
+		return false // If R' is infinity or other error
+	}
+
+	rxPrime, ryPrime := rPrimeAffine.X, rPrimeAffine.Y
+
+	// Check R'_x == R (sig.R)
+	return field.Fp.IsEven(ryPrime) && (rxPrime.Cmp(sig.R) == 0)
+}
+
+// VerifyFieldElement checks a Schnorr signature for a single field element message.
+func (pk PublicKey) VerifyFieldElement(sig *signature.Signature, message *big.Int, networkId string) bool {
+	msgInput := poseidonbigint.HashInput{
+		Fields: []*big.Int{message},
+	}
+	return pk.Verify(sig, msgInput, networkId)
 }

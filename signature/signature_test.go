@@ -1,4 +1,4 @@
-package schnorr
+package signature_test
 
 import (
 	"encoding/json"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/node101-io/mina-signer-go/keys"
 	"github.com/node101-io/mina-signer-go/poseidonbigint"
+	"github.com/node101-io/mina-signer-go/signature"
 )
 
 type TestCase struct {
@@ -26,7 +27,6 @@ type TestCase struct {
 var maxTests = 10000
 
 func TestSignaturesFromJSON(t *testing.T) {
-
 	data, err := os.ReadFile("testJSON/1.json")
 	if err != nil {
 		t.Fatalf("Failed to read test JSON: %v", err)
@@ -56,10 +56,10 @@ func TestSignaturesFromJSON(t *testing.T) {
 			continue
 		}
 		msg := make([]*big.Int, len(tc.Message))
-		for j, m := range tc.Message {
-			bi, ok := new(big.Int).SetString(m, 10)
-			if !ok {
-				t.Errorf("Case %d: invalid message[%d]: %v", i, j, m)
+		for j, m_str := range tc.Message {
+			bi, ok_m := new(big.Int).SetString(m_str, 10)
+			if !ok_m {
+				t.Errorf("Case %d: invalid message[%d]: %v", i, j, m_str)
 				failed++
 				continue
 			}
@@ -72,14 +72,17 @@ func TestSignaturesFromJSON(t *testing.T) {
 			failed++
 			continue
 		}
-		signature := &Signature{R: r, S: s}
+
+		expectedSignature := &signature.Signature{R: r, S: s}
+
 		privateKey := keys.PrivateKey{Value: priv}
-		pub := privateKey.ToPublicKey()
+		pubKey := privateKey.ToPublicKey()
 
 		msgInput := poseidonbigint.HashInput{
 			Fields: msg,
 		}
-		derivedSignature, err := Sign(msgInput, priv, network)
+
+		derivedSignature, err := privateKey.Sign(msgInput, network)
 
 		if err != nil {
 			t.Errorf("Case %d: Signing failed with error: %v\nPriv: %s\nMsg: %v", i, err, priv, tc.Message)
@@ -87,22 +90,24 @@ func TestSignaturesFromJSON(t *testing.T) {
 			continue
 		}
 
-		if derivedSignature.R.Cmp(r) != 0 || derivedSignature.S.Cmp(s) != 0 {
+		if derivedSignature.R.Cmp(expectedSignature.R) != 0 || derivedSignature.S.Cmp(expectedSignature.S) != 0 {
 			t.Errorf("Case %d: Signature mismatch\nExpected: (R: %s, S: %s)\nGot: (R: %s, S: %s)\nPriv: %s\nMsg: %v",
-				i, r, s, derivedSignature.R, derivedSignature.S, priv, tc.Message)
+				i, expectedSignature.R, expectedSignature.S, derivedSignature.R, derivedSignature.S, priv, tc.Message)
 			failed++
 			continue
 		}
 
-		if !Verify(signature, msgInput, pub, network) {
-			t.Errorf("Case %d: Signature verification failed\nPriv: %s\nMsg: %v\nSignature: (R: %s, S: %s)", i, priv, tc.Message, r, s)
+		if !pubKey.Verify(expectedSignature, msgInput, network) {
+			t.Errorf("Case %d: Signature verification failed\nPriv: %s\nMsg: %v\nSignature: (R: %s, S: %s)", i, priv, tc.Message, expectedSignature.R, expectedSignature.S)
 			failed++
 		}
+	}
+	if failed > 0 {
+		t.Logf("Total failed cases in TestSignaturesFromJSON: %d/%d", failed, len(testCases))
 	}
 }
 
 func TestInvalidSignature(t *testing.T) {
-
 	data, err := os.ReadFile("testJSON/1.json")
 	if err != nil {
 		t.Fatalf("Failed to read test JSON: %v", err)
@@ -132,16 +137,15 @@ func TestInvalidSignature(t *testing.T) {
 			continue
 		}
 		msg := make([]*big.Int, len(tc.Message))
-		for j, m := range tc.Message {
-			bi, ok := new(big.Int).SetString(m, 10)
-			if !ok {
-				t.Errorf("Case %d: invalid message[%d]: %v", i, j, m)
+		for j, m_str := range tc.Message {
+			bi, ok_m := new(big.Int).SetString(m_str, 10)
+			if !ok_m {
+				t.Errorf("Case %d: invalid message[%d]: %v", i, j, m_str)
 				failed++
 				continue
 			}
 			msg[j] = bi
 		}
-
 		r, okR := new(big.Int).SetString(tc.Signature.R, 10)
 		s, okS := new(big.Int).SetString(tc.Signature.S, 10)
 		if !okR || !okS {
@@ -149,38 +153,37 @@ func TestInvalidSignature(t *testing.T) {
 			failed++
 			continue
 		}
-		signature := &Signature{R: r, S: s}
+
+		validSignature := &signature.Signature{R: r, S: s}
 
 		privateKey := keys.PrivateKey{Value: priv}
-		pub := privateKey.ToPublicKey()
-		
-		intruderPrivateKey := keys.PrivateKey{Value: new(big.Int).Add(priv, big.NewInt(1))}
-		intruder := intruderPrivateKey.ToPublicKey()
+		pubKey := privateKey.ToPublicKey()
+
+		intruderVal := new(big.Int).Add(priv, big.NewInt(1))
+		intruderPrivateKey := keys.PrivateKey{Value: intruderVal}
+		intruderPubKey := intruderPrivateKey.ToPublicKey()
 
 		corruptedMsg := make([]*big.Int, len(msg))
 		copy(corruptedMsg, msg)
-
-		if len(msg) > 0 {
+		if len(msg) > 0 && len(corruptedMsg) > 0 {
 			idx := rand.Intn(len(msg))
 			corruptedMsg[idx] = new(big.Int).Add(msg[idx], big.NewInt(1))
 		}
 
-		msgInput := poseidonbigint.HashInput{
-			Fields: msg,
-		}
+		msgInput := poseidonbigint.HashInput{Fields: msg}
+		corruptedMsgInput := poseidonbigint.HashInput{Fields: corruptedMsg}
 
-		corruptedMsgInput := poseidonbigint.HashInput{
-			Fields: corruptedMsg,
-		}
-
-		if Verify(signature, corruptedMsgInput, pub, network) {
+		if pubKey.Verify(validSignature, corruptedMsgInput, network) {
 			t.Errorf("Case %d: Signature verification should have failed with modified message\n", i)
 			failed++
 		}
 
-		if Verify(signature, msgInput, intruder, network) {
+		if intruderPubKey.Verify(validSignature, msgInput, network) {
 			t.Errorf("Case %d: Signature verification should have failed with intruder's public key\n", i)
 			failed++
 		}
+	}
+	if failed > 0 {
+		t.Logf("Total failed cases in TestInvalidSignature: %d/%d", failed, len(testCases))
 	}
 }
