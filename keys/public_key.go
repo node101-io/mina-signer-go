@@ -2,10 +2,21 @@ package keys
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/big"
 
 	"github.com/node101-io/mina-signer-go/curve"
 	"github.com/node101-io/mina-signer-go/field"
+)
+
+const (
+	// PublicKeyXByteSize defines the byte size for the X coordinate of a PublicKey.
+	// Pallas curve field elements are approximately 255 bits, fitting into 32 bytes.
+	PublicKeyXByteSize = 32
+	// PublicKeyIsOddByteSize defines the byte size for the IsOdd flag.
+	PublicKeyIsOddByteSize = 1
+	// PublicKeyTotalByteSize is the total size of a marshaled PublicKey.
+	PublicKeyTotalByteSize = PublicKeyXByteSize + PublicKeyIsOddByteSize
 )
 
 // PublicKey represents a public key with an X coordinate and a boolean indicating if Y is odd.
@@ -31,7 +42,8 @@ func (pk *PublicKey) IsValid() bool {
 
 // Point represents a point on the curve with X and Y coordinates.
 // TODO: This is a temporary stand-in for curvebigint.Group or curve.GroupAffine.
-//       Decide on a canonical Group/Point type and use it.
+//
+//	Decide on a canonical Group/Point type and use it.
 type Point struct {
 	X *big.Int
 	Y *big.Int
@@ -80,6 +92,55 @@ func (pk *PublicKey) ToInputLegacy() HashInputLegacy {
 	return HashInputLegacy{Fields: []*big.Int{pk.X}, Bits: []bool{pk.IsOdd}}
 }
 
+// MarshalBytes serializes the PublicKey into a byte slice.
+// The format is [X (PublicKeyXByteSize bytes)][IsOdd (PublicKeyIsOddByteSize byte)], totaling PublicKeyTotalByteSize bytes.
+func (pk *PublicKey) MarshalBytes() ([]byte, error) {
+	if pk == nil || pk.X == nil {
+		return nil, fmt.Errorf("cannot marshal PublicKey: pk or pk.X is nil")
+	}
+
+	out := make([]byte, PublicKeyTotalByteSize)
+
+	xBytes := pk.X.Bytes()
+	if len(xBytes) > PublicKeyXByteSize {
+		return nil, fmt.Errorf("PublicKey.X is too large: got %d bytes, max %d bytes", len(xBytes), PublicKeyXByteSize)
+	}
+	offset := PublicKeyXByteSize - len(xBytes)
+	copy(out[offset:PublicKeyXByteSize], xBytes)
+
+	if pk.IsOdd {
+		out[PublicKeyXByteSize] = 0x01
+	} else {
+		out[PublicKeyXByteSize] = 0x00
+	}
+
+	return out, nil
+}
+
+// UnmarshalBytes deserializes data into the PublicKey.
+// data is expected to be PublicKeyTotalByteSize bytes long.
+func (pk *PublicKey) UnmarshalBytes(data []byte) error {
+	if len(data) != PublicKeyTotalByteSize {
+		return fmt.Errorf("invalid data length for PublicKey: expected %d bytes, got %d bytes", PublicKeyTotalByteSize, len(data))
+	}
+
+	if pk.X == nil {
+		pk.X = new(big.Int)
+	}
+	pk.X.SetBytes(data[0:PublicKeyXByteSize])
+
+	isOddByte := data[PublicKeyXByteSize] // Accessing the byte after X part
+	if isOddByte == 0x01 {
+		pk.IsOdd = true
+	} else if isOddByte == 0x00 {
+		pk.IsOdd = false
+	} else {
+		return fmt.Errorf("invalid byte for IsOdd flag: expected 0x00 or 0x01, got 0x%02x", isOddByte)
+	}
+
+	return nil
+}
+
 // MarshalJSON implements the json.Marshaler interface for PublicKey.
 func (pk PublicKey) MarshalJSON() ([]byte, error) {
 	// Guard against nil pk.X if it can occur, as pk.X.String() would panic.
@@ -111,7 +172,7 @@ func (pk *PublicKey) UnmarshalJSON(data []byte) error {
 		var success bool
 		x, success = new(big.Int).SetString(temp.X, 10)
 		if !success {
-			// Consider returning a more specific error, e.g., fmt.Errorf("failed to parse X '%s' from JSON for PublicKey", temp.X)
+			return fmt.Errorf("failed to parse X '%s' from JSON for PublicKey", temp.X)
 		}
 	} else {
 		// Decide how to handle empty X string: treat as nil, zero, or error.
@@ -130,4 +191,4 @@ func isOdd(x *big.Int) bool {
 		return false
 	}
 	return x.Bit(0) == 1
-} 
+}
