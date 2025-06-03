@@ -97,6 +97,20 @@ func (sk PrivateKey) SignFieldElement(message *big.Int, networkId string) (*sign
 	return sk.Sign(msgInput, networkId)
 }
 
+// Equal checks if two PrivateKeys are identical.
+func (sk PrivateKey) Equal(other PrivateKey) bool {
+	// If both values are nil
+	if sk.Value == nil && other.Value == nil {
+		return true
+	}
+	// If one value is nil, the other is not
+	if sk.Value == nil || other.Value == nil {
+		return false
+	}
+	// If both values are non-nil, compare them
+	return sk.Value.Cmp(other.Value) == 0
+}
+
 // MarshalBytes serializes the PrivateKey into a byte slice.
 // The format is [Value (PrivateKeyByteSize bytes)].
 func (sk *PrivateKey) MarshalBytes() ([]byte, error) {
