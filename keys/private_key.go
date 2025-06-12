@@ -1,6 +1,7 @@
 package keys
 
 import (
+	"crypto/sha256"
 	"errors" // For Sign method
 	"fmt"
 	"math/big"
@@ -24,6 +25,35 @@ type PrivateKey struct {
 
 // Scalar is an alias for *big.Int, typically used for scalar multiplication in cryptographic operations.
 type Scalar = *big.Int
+
+// NewPrivateKeyFromBytes creates a new PrivateKey from a 32-byte array.
+// This is typically used with SHA256 hash outputs.
+// If the value exceeds the field order or is zero, it re-hashes the input
+// until a valid private key is found within the field range.
+func NewPrivateKeyFromBytes(data [32]byte) PrivateKey {
+	// Convert byte array to big.Int
+	value := new(big.Int).SetBytes(data[:])
+
+	// Current hash data to work with
+	currentData := data
+
+	// Keep hashing until we get a value that's both non-zero and within field order
+	for {
+		// Apply modulo operation to ensure value is within the scalar field
+		value = field.Fq.Mod(value)
+
+		// If we get a valid non-zero value, use it
+		if value.Cmp(big.NewInt(0)) != 0 {
+			break
+		}
+
+		// If value is zero, hash the current data again and try again
+		currentData = sha256.Sum256(currentData[:])
+		value = new(big.Int).SetBytes(currentData[:])
+	}
+
+	return PrivateKey{Value: value}
+}
 
 // ToPublicKey derives the corresponding PublicKey from the PrivateKey.
 // It uses GeneratorMina and GroupScale from the curvebigint package.
