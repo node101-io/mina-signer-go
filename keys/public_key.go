@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/decred/base58"
 	"github.com/node101-io/mina-signer-go/curve"
 	"github.com/node101-io/mina-signer-go/curvebigint"
 	"github.com/node101-io/mina-signer-go/field"
@@ -248,4 +249,60 @@ func (pk PublicKey) VerifyFieldElement(sig *signature.Signature, message *big.In
 		Fields: []*big.Int{message},
 	}
 	return pk.Verify(sig, msgInput, networkId)
+}
+
+func (pk PublicKey) ToAddress() (string, error) {
+	pkBytes, err := pk.MarshalBytes()
+	if err != nil {
+		return "", err
+	}
+
+	// Encode the public key bytes to base58
+	address := base58.Encode(pkBytes)
+
+	return address, nil
+}
+
+func (pk PublicKey) FromAddress(address string) (PublicKey, error) {
+	pkBytes := base58.Decode(address)
+
+	if err := pk.UnmarshalBytes(pkBytes); err != nil {
+		return PublicKey{}, err
+	}
+
+	return pk, nil
+}
+
+// VerifyMessage checks a Schnorr signature against an arbitrary string message.
+// The message is split into field elements whose byte length equals the base field size.
+// After constructing a poseidonbigint.HashInput from these elements, it delegates to Verify.
+func (pk PublicKey) VerifyMessage(sig *signature.Signature, msg string, networkId string) bool {
+	// Determine the chunk size (in bytes) for each field element.
+	chunkSize := field.Fp.SizeInBytes()
+
+	msgBytes := []byte(msg)
+
+	// Convert the message into field elements for Poseidon hash.
+	var fields []*big.Int
+	if len(msgBytes) == 0 {
+		fields = []*big.Int{}
+	} else {
+		for i := 0; i < len(msgBytes); i += chunkSize {
+			end := i + chunkSize
+			if end > len(msgBytes) {
+				end = len(msgBytes)
+			}
+			chunk := msgBytes[i:end]
+
+			fieldElement := new(big.Int)
+			fieldElement.SetBytes(chunk)
+			fields = append(fields, fieldElement)
+		}
+	}
+
+	hashInput := poseidonbigint.HashInput{
+		Fields: fields,
+	}
+
+	return pk.Verify(sig, hashInput, networkId)
 }

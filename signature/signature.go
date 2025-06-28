@@ -18,9 +18,9 @@ type Signature struct {
 	S *big.Int // Scalar
 }
 
-// MarshalBinary serializes the Signature into a byte slice.
+// MarshalBytes serializes the Signature into a byte slice.
 // The format is [R (32 bytes)][S (32 bytes)], totaling 64 bytes.
-func (sig *Signature) MarshalBinary() ([]byte, error) {
+func (sig *Signature) MarshalBytes() ([]byte, error) {
 	if sig == nil || sig.R == nil || sig.S == nil {
 		return nil, fmt.Errorf("cannot marshal Signature: R or S is nil")
 	}
@@ -42,9 +42,9 @@ func (sig *Signature) MarshalBinary() ([]byte, error) {
 	return out, nil
 }
 
-// UnmarshalBinary deserializes data into the Signature.
+// UnmarshalBytes deserializes data into the Signature.
 // data is expected to be TotalSignatureSize (64) bytes long.
-func (sig *Signature) UnmarshalBinary(data []byte) error {
+func (sig *Signature) UnmarshalBytes(data []byte) error {
 	if len(data) != TotalSignatureSize {
 		return fmt.Errorf("invalid data length for Signature: expected %d bytes, got %d bytes", TotalSignatureSize, len(data))
 	}

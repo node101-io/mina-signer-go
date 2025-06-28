@@ -127,6 +127,46 @@ func (sk PrivateKey) SignFieldElement(message *big.Int, networkId string) (*sign
 	return sk.Sign(msgInput, networkId)
 }
 
+// SignMessage generates a Schnorr signature for an arbitrary string message.
+// The message is split into field elements of size equal to the underlying field byte size.
+// Each chunk is converted to a big.Int, collected into a poseidonbigint.HashInput and
+// then the existing Sign method is invoked.
+func (sk PrivateKey) SignMessage(msg string, networkId string) (*signature.Signature, error) {
+	// Determine the chunk size (in bytes) for each field element.
+	// This corresponds to the size, in bytes, of elements in the base field Fp.
+	chunkSize := field.Fp.SizeInBytes()
+
+	// Convert the incoming string message to a byte slice.
+	msgBytes := []byte(msg)
+
+	// Convert the message into field elements for Poseidon hash.
+	var fields []*big.Int
+
+	if len(msgBytes) == 0 {
+		// Empty message results in an empty slice of field elements.
+		fields = []*big.Int{}
+	} else {
+		for i := 0; i < len(msgBytes); i += chunkSize {
+			end := i + chunkSize
+			if end > len(msgBytes) {
+				end = len(msgBytes)
+			}
+			chunk := msgBytes[i:end]
+
+			fieldElement := new(big.Int)
+			fieldElement.SetBytes(chunk)
+			fields = append(fields, fieldElement)
+		}
+	}
+
+	hashInput := poseidonbigint.HashInput{
+		Fields: fields,
+	}
+
+	// Delegate to the existing Sign implementation.
+	return sk.Sign(hashInput, networkId)
+}
+
 // Equal checks if two PrivateKeys are identical.
 func (sk PrivateKey) Equal(other PrivateKey) bool {
 	// If both values are nil
