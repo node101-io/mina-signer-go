@@ -25,8 +25,8 @@ const (
 
 // PublicKey represents a public key with an X coordinate and a boolean indicating if Y is odd.
 type PublicKey struct {
-	X     *big.Int
-	IsOdd bool
+	X     *big.Int `json:"x" protobuf:"bytes,1,opt,name=x,proto3"`
+	IsOdd bool     `json:"isOdd" protobuf:"varint,2,opt,name=isOdd,proto3"`
 }
 
 // HashInputLegacy is a legacy structure used for hashing PublicKey.
