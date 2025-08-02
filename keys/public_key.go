@@ -306,3 +306,57 @@ func (pk PublicKey) VerifyMessage(sig *signature.Signature, msg string, networkI
 
 	return pk.Verify(sig, hashInput, networkId)
 }
+
+// Marshal implements gogoproto custom type marshaling interface.
+// It delegates to MarshalBytes for actual serialization.
+func (pk PublicKey) Marshal() ([]byte, error) {
+	return pk.MarshalBytes()
+}
+
+// MarshalTo implements gogoproto custom type marshaling interface.
+// It marshals the PublicKey directly into the provided byte slice.
+// Returns the number of bytes written and any error encountered.
+func (pk *PublicKey) MarshalTo(data []byte) (n int, err error) {
+	if len(data) < PublicKeyTotalByteSize {
+		return 0, fmt.Errorf("insufficient buffer size: need %d bytes, got %d bytes", PublicKeyTotalByteSize, len(data))
+	}
+
+	if pk == nil || pk.X == nil {
+		return 0, fmt.Errorf("cannot marshal PublicKey: pk or pk.X is nil")
+	}
+
+	xBytes := pk.X.Bytes()
+	if len(xBytes) > PublicKeyXByteSize {
+		return 0, fmt.Errorf("PublicKey.X is too large: got %d bytes, max %d bytes", len(xBytes), PublicKeyXByteSize)
+	}
+
+	// Clear the buffer first
+	for i := 0; i < PublicKeyTotalByteSize; i++ {
+		data[i] = 0
+	}
+
+	// Copy X coordinate with proper padding
+	offset := PublicKeyXByteSize - len(xBytes)
+	copy(data[offset:PublicKeyXByteSize], xBytes)
+
+	// Set IsOdd flag
+	if pk.IsOdd {
+		data[PublicKeyXByteSize] = 0x01
+	} else {
+		data[PublicKeyXByteSize] = 0x00
+	}
+
+	return PublicKeyTotalByteSize, nil
+}
+
+// Unmarshal implements gogoproto custom type unmarshaling interface.
+// It delegates to UnmarshalBytes for actual deserialization.
+func (pk *PublicKey) Unmarshal(data []byte) error {
+	return pk.UnmarshalBytes(data)
+}
+
+// Size implements gogoproto custom type size interface.
+// Returns the size in bytes of the marshaled PublicKey.
+func (pk *PublicKey) Size() int {
+	return PublicKeyTotalByteSize
+}
