@@ -69,6 +69,20 @@ func hashMessage(message poseidonbigint.HashInput, pubPoint Point, r_val *big.In
 	return hashGeneric.HashWithPrefix(prefix, poseidonbigint.PackToFields(input))
 }
 
+// hashMessageLegacy computes the hash used in Schnorr signature, combining the message, public key, and a nonce component (r).
+// It takes the message, public key point (as keys.Point), the R value of the signature, and network ID.
+func hashMessageLegacy(message poseidonbigint.HashInputLegacy, pubPoint Point, r_val *big.Int, networkId string) *big.Int {
+	x, y := pubPoint.X, pubPoint.Y // Using X, Y from keys.Point
+	helper := poseidonbigint.HashInputLegacyHelpers{}
+	// poseidon.CreatePoseidon and constants.PoseidonParamsLegacyFp are public
+	hashGeneric := hashgeneric.CreateHashHelpers(field.Fp, poseidon.CreatePoseidon(*field.Fp, constants.PoseidonParamsLegacyFp))
+	input := helper.Append(message, poseidonbigint.HashInputLegacy{Fields: []*big.Int{x, y, r_val}})
+
+	prefix := signaturePrefix(networkId)
+	// hashGeneric.HashWithPrefix is a public method of the hashGeneric helper instance.
+	return hashGeneric.HashWithPrefix(prefix, poseidonbigint.PackToFieldsLegacy(input))
+}
+
 // -- Helper functions for network ID and prefixes (mostly as they were, made unexported) --
 
 func getNetworkIdHashInput(network string) (*big.Int, int) {

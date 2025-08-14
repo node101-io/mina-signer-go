@@ -243,6 +243,59 @@ func (pk PublicKey) Verify(sig *signature.Signature, message poseidonbigint.Hash
 	return field.Fp.IsEven(ryPrime) && (rxPrime.Cmp(sig.R) == 0)
 }
 
+// Verify checks a Schnorr signature against the public key and message.
+// It uses helper functions from the keys package (hashMessage).
+func (pk PublicKey) VerifyLegacy(sig *signature.Signature, message poseidonbigint.HashInputLegacy, networkId string) bool {
+	if pk.X == nil || sig == nil || sig.R == nil || sig.S == nil {
+		// TODO: Log error or handle more gracefully? For now, mimic original behavior of just returning false.
+		return false
+	}
+
+	// 1. Convert public key to a point (group element)
+	pkPoint, err := pk.ToGroup() // pkPoint is keys.Point
+	if err != nil {
+		return false // If public key can't be converted to a point, verification fails
+	}
+
+	// 2. Calculate e = Hash(message || pubKey_x || pubKey_y || R_x)
+	// hashMessageLegacy expects keys.Point
+	e := hashMessageLegacy(message, pkPoint, sig.R, networkId)
+
+	// 3. Calculate R' = sG - eP
+	//    sG = s * G (NewPallasCurve().One is G)
+	//    eP = e * pkGroup (pkPoint needs to be in projective form for scaling)
+
+	// Convert pkPoint (keys.Point which is affine-like) to curve.GroupProjective for scaling
+	// curvebigint.Group is also affine-like. We need GroupToProjective.
+	// Create a temporary curvebigint.Group from pkPoint to use GroupToProjective
+	pkCurveBigintGroup := curvebigint.Group{X: pkPoint.X, Y: pkPoint.Y}
+	pkProjective := curvebigint.GroupToProjective(pkCurveBigintGroup)
+
+	pallas := curve.NewPallasCurve()
+	sG := pallas.Scale(pallas.One, sig.S) // sG is GroupProjective
+	eP := pallas.Scale(pkProjective, e)   // eP is GroupProjective
+
+	rPrimeProjective := pallas.Sub(sG, eP) // rPrimeProjective is GroupProjective
+
+	// 4. Convert R' back to affine and check if R'_x == R and R'_y is even.
+	rPrimeAffine, err := curvebigint.GroupFromProjective(rPrimeProjective) // rPrimeAffine is curvebigint.Group
+	if err != nil {
+		return false // If R' is infinity or other error
+	}
+
+	rxPrime, ryPrime := rPrimeAffine.X, rPrimeAffine.Y
+
+	fmt.Println("IsEven", field.Fp.IsEven(ryPrime))
+	fmt.Println("Equal", field.Fp.Equal(rxPrime, sig.R))
+	if rxPrime.Cmp(sig.R) != 0 {
+		fmt.Println("rxPrime", rxPrime.String())
+		fmt.Println("sig.R", sig.R.String())
+	}
+
+	// Check R'_x == R (sig.R)
+	return field.Fp.IsEven(ryPrime) && field.Fp.Equal(rxPrime, sig.R)
+}
+
 // VerifyFieldElement checks a Schnorr signature for a single field element message.
 func (pk PublicKey) VerifyFieldElement(sig *signature.Signature, message *big.Int, networkId string) bool {
 	msgInput := poseidonbigint.HashInput{
@@ -305,6 +358,13 @@ func (pk PublicKey) VerifyMessage(sig *signature.Signature, msg string, networkI
 	}
 
 	return pk.Verify(sig, hashInput, networkId)
+}
+
+func (pk PublicKey) VerifyMessageLegacy(sig *signature.Signature, msg string, networkId string) bool {
+	// Convert message to legacy hash input
+	hashInput := poseidonbigint.StringToInput(msg)
+
+	return pk.VerifyLegacy(sig, hashInput, networkId)
 }
 
 // Marshal implements gogoproto custom type marshaling interface.
