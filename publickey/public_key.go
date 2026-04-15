@@ -1,19 +1,38 @@
-package minasignergo
+package publickey
 
 import (
+	"encoding/hex"
+	"errors"
+
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/base/prng/pcg"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
+	"github.com/node101-io/mina-signer-go/signature"
 )
 
-func (pk *PublicKey) SigVerify(signature *Signature, message string) (bool, error) {
+var ErrNilSignature = errors.New("nil signature")
 
-	sig, err := mina.DeserializeSignature(signature.Value)
+type PublicKey struct {
+	value     []byte
+	NetworkID mina.NetworkID
+}
+
+func (pk *PublicKey) Get() []byte {
+	return pk.value
+}
+
+func (pk *PublicKey) Verify(signature *signature.Signature, message string) (bool, error) {
+
+	if signature == nil {
+		return false, ErrNilSignature
+	}
+
+	sig, err := mina.DeserializeSignature(signature.Get())
 	if err != nil {
 		return false, err
 	}
 
-	publicKeyBronCompatible, err := pk.ToBron()
+	publicKeyBronCompatible, err := pk.toBron()
 	if err != nil {
 		return false, err
 	}
@@ -21,7 +40,7 @@ func (pk *PublicKey) SigVerify(signature *Signature, message string) (bool, erro
 	msg := new(mina.ROInput).Init()
 	msg.AddString(message)
 
-	scheme, err := mina.NewRandomisedScheme(mina.MainNet, pcg.NewRandomised())
+	scheme, err := mina.NewRandomisedScheme(pk.NetworkID, pcg.NewRandomised())
 	if err != nil {
 		return false, err
 	}
@@ -39,8 +58,8 @@ func (pk *PublicKey) SigVerify(signature *Signature, message string) (bool, erro
 	return true, nil
 }
 
-func (pk *PublicKey) ToBron() (*mina.PublicKey, error) {
-	point, err := pasta.NewPallasCurve().FromBytes(pk.Value)
+func (pk *PublicKey) toBron() (*mina.PublicKey, error) {
+	point, err := pasta.NewPallasCurve().FromBytes(pk.value)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +67,7 @@ func (pk *PublicKey) ToBron() (*mina.PublicKey, error) {
 }
 
 func (pk *PublicKey) String() string {
-	return string(pk.Value)
+	return hex.EncodeToString(pk.value)
 }
 
 func DecodePublicKey(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
@@ -62,7 +81,7 @@ func DecodePublicKey(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
 		return nil, err
 	}
 	return &PublicKey{
-		Value:     publicBron.Value().Bytes(),
+		value:     publicBron.Value().Bytes(),
 		NetworkID: networkID,
 	}, nil
 }

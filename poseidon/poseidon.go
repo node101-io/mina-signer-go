@@ -19,7 +19,12 @@ func NewPoseidon() *Poseidon {
 func (p *Poseidon) Hash(data []byte) ([]byte, error) {
 
 	if len(data)%bronRate == 0 {
-		return data, nil
+		_, err := p.hasher.Write(data)
+		if err != nil {
+			return nil, err
+		}
+
+		return p.hasher.Sum(nil), nil
 	}
 
 	multiplierRate := (len(data) / bronRate)
