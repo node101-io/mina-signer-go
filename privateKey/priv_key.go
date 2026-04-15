@@ -23,8 +23,9 @@ func NewPrivateKeyFromBytes(data [32]byte, networkID mina.NetworkID) (*PrivateKe
 		return nil, err
 	}
 	return &PrivateKey{
-		value:     privKey.Value().Bytes(),
-		NetworkID: networkID,
+		value:              privKey.Value().Bytes(),
+		bronCompatiblePriv: privKey,
+		NetworkID:          networkID,
 	}, nil
 }
 
