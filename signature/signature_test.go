@@ -1,10 +1,14 @@
 package signature_test
 
 import (
+	"encoding/hex"
 	"testing"
 
+	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
-	privatekey "github.com/node101-io/mina-signer-go/privateKey"
+	"github.com/node101-io/mina-signer-go/publickey"
+	"github.com/node101-io/mina-signer-go/signature"
+	signaturesdk "github.com/node101-io/mina-signer-go/signature"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,22 +21,85 @@ var hardcodedPriv = [32]byte{
 
 const messageToSign string = "mina-signer-go"
 
-func TestPublicKey(t *testing.T) {
+func TestDecodeSignatureGetAndString(t *testing.T) {
+	raw := make([]byte, 64)
+	for i := range raw {
+		raw[i] = byte(i)
+	}
 
-	privKey, err := privatekey.NewPrivateKeyFromBytes(hardcodedPriv, mina.MainNet)
-	require.NoError(t, err)
-	require.NotNil(t, privKey)
+	sig := signaturesdk.DecodeSignature(raw, mina.TestNet)
+	require.Equal(t, raw, sig.Get())
+	require.Equal(t, hex.EncodeToString(raw), sig.String())
+}
 
-	sig, err := privKey.Sign(messageToSign)
-	require.NoError(t, err)
-	require.NotNil(t, sig)
+func TestDecodeSignaturePreservesNetworkID(t *testing.T) {
+	sig := signaturesdk.DecodeSignature(make([]byte, 64), mina.TestNet)
+	require.Equal(t, mina.TestNet, sig.NetworkID)
+}
 
-	public, err := privKey.ToPublicKey()
-	require.NoError(t, err)
-	require.NotNil(t, public)
+func TestReferenceSignatureVerifies(t *testing.T) {
+	_, public, sig := referenceFixture(t, mina.MainNet, messageToSign)
 
 	validity, err := public.Verify(sig, messageToSign)
 	require.NoError(t, err)
 	require.True(t, validity)
+}
 
+func TestPublicKeyVerifyRejectsWrongMessage(t *testing.T) {
+	_, public, sig := referenceFixture(t, mina.MainNet, messageToSign)
+
+	validity, err := public.Verify(sig, messageToSign+"-wrong")
+	require.False(t, validity)
+	require.Error(t, err)
+}
+
+func TestPublicKeyVerifyRejectsMalformedSignature(t *testing.T) {
+	_, public, _ := referenceFixture(t, mina.MainNet, messageToSign)
+
+	validity, err := public.Verify(signaturesdk.DecodeSignature([]byte{0x01}, mina.MainNet), messageToSign)
+	require.False(t, validity)
+	require.Error(t, err)
+}
+
+func TestPublicKeyVerifyRejectsMismatchedNetwork(t *testing.T) {
+	rawPublicKey, _, sig := referenceFixture(t, mina.MainNet, messageToSign)
+
+	testnetPublicKey, err := publickey.DecodePublicKey(rawPublicKey, mina.TestNet)
+	require.NoError(t, err)
+
+	validity, err := testnetPublicKey.Verify(sig, messageToSign)
+	require.False(t, validity)
+	require.Error(t, err)
+}
+
+func referenceFixture(t *testing.T, networkID mina.NetworkID, message string) ([]byte, *publickey.PublicKey, *signature.Signature) {
+	t.Helper()
+
+	scalar, err := pasta.NewPallasScalarField().FromBytes(hardcodedPriv[:])
+	require.NoError(t, err)
+
+	privKey, err := mina.NewPrivateKey(scalar)
+	require.NoError(t, err)
+
+	scheme, err := mina.NewScheme(networkID, privKey)
+	require.NoError(t, err)
+
+	msg := new(mina.ROInput).Init()
+	msg.AddString(message)
+
+	signer, err := scheme.Signer(privKey)
+	require.NoError(t, err)
+
+	sig, err := signer.Sign(msg)
+	require.NoError(t, err)
+
+	serialized, err := mina.SerializeSignature(sig)
+	require.NoError(t, err)
+
+	rawPublicKey := privKey.PublicKey().Value().Bytes()
+
+	pk, err := publickey.DecodePublicKey(rawPublicKey, networkID)
+	require.NoError(t, err)
+
+	return rawPublicKey, pk, signature.DecodeSignature(serialized, networkID)
 }
