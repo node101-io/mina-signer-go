@@ -1,7 +1,9 @@
-package minasignergo
+package poseidon
 
 import (
+	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/hashing/poseidon"
+	bronposeidon "github.com/bronlabs/bron-crypto/pkg/hashing/poseidon"
 )
 
 const bronRate int = 64
@@ -18,27 +20,28 @@ func NewPoseidon() *Poseidon {
 
 func (p *Poseidon) Hash(data []byte) ([]byte, error) {
 
-	if len(data)%bronRate == 0 {
-		_, err := p.hasher.Write(data)
+	field := pasta.NewPallasBaseField()
+	rate := bronposeidon.NewKimchi().Rate()
+
+	elements := make([]*pasta.PallasBaseFieldElement, 0, len(data))
+	for _, char := range data {
+		element, err := field.FromBytesBEReduce([]byte{char})
 		if err != nil {
 			return nil, err
 		}
-
-		return p.hasher.Sum(nil), nil
+		elements = append(elements, element)
 	}
 
-	multiplierRate := (len(data) / bronRate)
-
-	expectedSize := (multiplierRate + 1) * bronRate
-
-	padded := make([]byte, expectedSize)
-	padded = append(padded, data...)
-
-	for i := len(data); i < expectedSize; i++ {
-		padded = append(padded, 0)
+	for len(elements)%rate != 0 {
+		elements = append(elements, field.Zero())
 	}
 
-	_, err := p.hasher.Write(padded)
+	encoded := make([]byte, 0, len(elements)*field.ElementSize())
+	for _, element := range elements {
+		encoded = append(encoded, element.Bytes()...)
+	}
+
+	_, err := p.hasher.Write(encoded)
 	if err != nil {
 		return nil, err
 	}
