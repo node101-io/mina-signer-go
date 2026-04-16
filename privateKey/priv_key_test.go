@@ -1,0 +1,107 @@
+package privatekey
+
+import (
+	"testing"
+
+	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
+	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
+	"github.com/stretchr/testify/require"
+)
+
+var hardcodedPriv = [32]byte{
+	0x3a, 0x7f, 0x1c, 0x92, 0xe4, 0x55, 0x8b, 0xd1,
+	0x6f, 0x20, 0xa9, 0x3c, 0x77, 0x4e, 0x11, 0x5d,
+	0x88, 0xca, 0x02, 0xf6, 0x9b, 0x31, 0x44, 0x7a,
+	0xde, 0x63, 0x19, 0xaf, 0x0c, 0x5e, 0xb2, 0x90,
+}
+
+const hardcodedMsg string = "mina-signer-go"
+
+func TestNewPrivateKeyFromBytesSetsFields(t *testing.T) {
+	privKey, err := NewPrivateKeyFromBytes(hardcodedPriv, mina.TestNet)
+	require.NoError(t, err)
+	require.NotNil(t, privKey)
+	require.Equal(t, mina.TestNet, privKey.NetworkID)
+	require.Len(t, privKey.value, len(hardcodedPriv))
+}
+
+func TestSignNilPrivateKeyReturnsErrNilPrivateKey(t *testing.T) {
+	var privKey *PrivateKey
+
+	sig, err := privKey.Sign(hardcodedMsg)
+	require.Nil(t, sig)
+	require.ErrorIs(t, err, ErrNilPrivateKey)
+}
+
+func TestDecodePrivateKeyBytesRejectsInvalidLength(t *testing.T) {
+	privKey, err := decodePrivateKeyBytes([]byte{0x01, 0x02})
+	require.Nil(t, privKey)
+	require.Error(t, err)
+}
+
+func TestDecodePrivateKeyBytesAcceptsValidBytes(t *testing.T) {
+	privKey, err := decodePrivateKeyBytes(hardcodedPriv[:])
+	require.NoError(t, err)
+	require.NotNil(t, privKey)
+	require.Len(t, privKey.Value().Bytes(), len(hardcodedPriv))
+}
+
+func TestNewPrivateKeyFromBytesStoresDecodedValue(t *testing.T) {
+	expected := initBronPrivKey(t)
+
+	privKey, err := NewPrivateKeyFromBytes(hardcodedPriv, mina.MainNet)
+	require.NoError(t, err)
+	require.Equal(t, expected.Value().Bytes(), privKey.value)
+}
+
+func TestSignProducesVerifiableSignatureWhenBronCompatiblePrivateKeyIsPresent(t *testing.T) {
+	privKey := mustPrivateKeyWithBron(t, mina.MainNet)
+
+	sig, err := privKey.Sign(hardcodedMsg)
+	require.NoError(t, err)
+	require.NotNil(t, sig)
+
+	public, err := privKey.ToPublicKey()
+	require.NoError(t, err)
+	require.NotNil(t, public)
+
+	validity, err := public.Verify(sig, hardcodedMsg)
+	require.NoError(t, err)
+	require.True(t, validity)
+}
+
+func TestToPublicKeyMatchesBronPublicKeyWhenBronCompatiblePrivateKeyIsPresent(t *testing.T) {
+	bronPriv := initBronPrivKey(t)
+	privKey := &PrivateKey{
+		value:              bronPriv.Value().Bytes(),
+		bronCompatiblePriv: bronPriv,
+		NetworkID:          mina.MainNet,
+	}
+
+	public, err := privKey.ToPublicKey()
+	require.NoError(t, err)
+	require.Equal(t, bronPriv.PublicKey().Value().Bytes(), public.Get())
+}
+
+func mustPrivateKeyWithBron(t *testing.T, networkID mina.NetworkID) *PrivateKey {
+	t.Helper()
+
+	bronPriv := initBronPrivKey(t)
+	return &PrivateKey{
+		value:              bronPriv.Value().Bytes(),
+		bronCompatiblePriv: bronPriv,
+		NetworkID:          networkID,
+	}
+}
+
+func initBronPrivKey(t *testing.T) *mina.PrivateKey {
+	t.Helper()
+
+	scalar, err := pasta.NewPallasScalarField().FromBytes(hardcodedPriv[:])
+	require.NoError(t, err)
+
+	privKey, err := mina.NewPrivateKey(scalar)
+	require.NoError(t, err)
+
+	return privKey
+}
