@@ -6,7 +6,7 @@ import (
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
-	privatekey "github.com/node101-io/mina-signer-go/privateKey"
+	privatekey "github.com/node101-io/mina-signer-go/privatekey"
 	"github.com/node101-io/mina-signer-go/publickey"
 	localsignature "github.com/node101-io/mina-signer-go/signature"
 	"github.com/stretchr/testify/require"
@@ -52,13 +52,18 @@ func TestDecodePublicKeyPreservesNetworkID(t *testing.T) {
 
 	pk, err := publickey.DecodePublicKey(rawPublicKey, mina.TestNet)
 	require.NoError(t, err)
-	require.Equal(t, mina.TestNet, pk.NetworkID)
+	require.Equal(t, mina.TestNet, pk.GetNetworkID())
 }
 
 func TestPublicKeyGetAndString(t *testing.T) {
 	rawPublicKey, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
-	require.Equal(t, rawPublicKey, pk.Get())
-	require.Equal(t, hex.EncodeToString(pk.Get()), pk.String())
+
+	pkValue, err := pk.Get()
+	require.NoError(t, err)
+	require.NotNil(t, pkValue)
+
+	require.Equal(t, rawPublicKey, pkValue)
+	require.Equal(t, hex.EncodeToString(pkValue), pk.String())
 }
 
 func TestPublicKeyVerifyReturnsErrNilSignature(t *testing.T) {
@@ -88,7 +93,7 @@ func TestPublicKeyVerifyRejectsWrongMessage(t *testing.T) {
 func TestPublicKeyVerifyRejectsMalformedSignature(t *testing.T) {
 	_, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
 
-	validity, err := pk.Verify(localsignature.DecodeSignature([]byte{0x01}, mina.MainNet), messageToSign)
+	validity, err := pk.Verify(localsignature.DecodeSignature([]byte{0x01}), messageToSign)
 	require.False(t, validity)
 	require.Error(t, err)
 }
@@ -133,5 +138,5 @@ func referenceFixture(t *testing.T, networkID mina.NetworkID, message string) ([
 	pk, err := publickey.DecodePublicKey(rawPublicKey, networkID)
 	require.NoError(t, err)
 
-	return rawPublicKey, pk, localsignature.DecodeSignature(serialized, networkID)
+	return rawPublicKey, pk, localsignature.DecodeSignature(serialized)
 }
