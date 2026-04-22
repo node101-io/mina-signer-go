@@ -10,11 +10,16 @@ import (
 )
 
 var ErrNilPrivateKey = errors.New("nil private key")
+var ErrInternal = errors.New("internal error")
 
 type PrivateKey struct {
 	value              []byte
 	bronCompatiblePriv *mina.PrivateKey
-	NetworkID          mina.NetworkID
+	networkID          mina.NetworkID
+}
+
+func (priv *PrivateKey) GetNetworkID() mina.NetworkID {
+	return priv.networkID
 }
 
 func NewPrivateKeyFromBytes(data [32]byte, networkID mina.NetworkID) (*PrivateKey, error) {
@@ -25,7 +30,7 @@ func NewPrivateKeyFromBytes(data [32]byte, networkID mina.NetworkID) (*PrivateKe
 	return &PrivateKey{
 		value:              privKey.Value().Bytes(),
 		bronCompatiblePriv: privKey,
-		NetworkID:          networkID,
+		networkID:          networkID,
 	}, nil
 }
 
@@ -35,7 +40,7 @@ func (privKey *PrivateKey) Sign(message string) (*signature.Signature, error) {
 		return nil, ErrNilPrivateKey
 	}
 
-	scheme, err := mina.NewScheme(privKey.NetworkID, privKey.bronCompatiblePriv)
+	scheme, err := mina.NewScheme(privKey.networkID, privKey.bronCompatiblePriv)
 	if err != nil {
 		return nil, err
 	}
@@ -58,12 +63,19 @@ func (privKey *PrivateKey) Sign(message string) (*signature.Signature, error) {
 		return nil, err
 	}
 
-	return signature.DecodeSignature(serialized, privKey.NetworkID), nil
+	return signature.DecodeSignature(serialized), nil
 
 }
 
 func (privKey *PrivateKey) ToPublicKey() (*publickey.PublicKey, error) {
-	return publickey.DecodePublicKey(privKey.bronCompatiblePriv.PublicKey().Value().Bytes(), privKey.NetworkID)
+	pk, err := publickey.DecodePublicKey(privKey.bronCompatiblePriv.PublicKey().Value().Bytes(), privKey.networkID)
+	if err != nil {
+		return nil, err
+	}
+	if pk == nil {
+		return nil, ErrInternal
+	}
+	return pk, err
 }
 
 func decodePrivateKeyBytes(data []byte) (*mina.PrivateKey, error) {

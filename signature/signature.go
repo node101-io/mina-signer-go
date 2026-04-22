@@ -2,26 +2,23 @@ package signature
 
 import (
 	"encoding/hex"
-
-	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
 )
 
 type Signature struct {
-	value     []byte
-	NetworkID mina.NetworkID
+	value []byte
 }
 
 func (sig *Signature) Get() []byte {
 	return sig.value
 }
 
+// Hex Encoding
 func (sig *Signature) String() string {
 	return hex.EncodeToString(sig.value)
 }
 
-func DecodeSignature(sig []byte, networkID mina.NetworkID) *Signature {
+func DecodeSignature(sig []byte) *Signature {
 	return &Signature{
-		value:     sig,
-		NetworkID: networkID,
+		value: sig,
 	}
 }

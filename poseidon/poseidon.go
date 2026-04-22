@@ -45,6 +45,9 @@ func (p *Poseidon) Hash(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	hash := p.hasher.Sum(nil)
 
-	return p.hasher.Sum(nil), nil
+	p.hasher.Reset()
+
+	return hash, nil
 }
