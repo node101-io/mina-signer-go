@@ -21,7 +21,7 @@ func TestNewPrivateKeyFromBytesSetsFields(t *testing.T) {
 	privKey, err := NewPrivateKeyFromBytes(hardcodedPriv, mina.TestNet)
 	require.NoError(t, err)
 	require.NotNil(t, privKey)
-	require.Equal(t, mina.TestNet, privKey.NetworkID)
+	require.Equal(t, mina.TestNet, privKey.GetNetworkID())
 	require.Len(t, privKey.value, len(hardcodedPriv))
 }
 
@@ -75,12 +75,16 @@ func TestToPublicKeyMatchesBronPublicKeyWhenBronCompatiblePrivateKeyIsPresent(t 
 	privKey := &PrivateKey{
 		value:              bronPriv.Value().Bytes(),
 		bronCompatiblePriv: bronPriv,
-		NetworkID:          mina.MainNet,
+		networkID:          mina.MainNet,
 	}
 
 	public, err := privKey.ToPublicKey()
 	require.NoError(t, err)
-	require.Equal(t, bronPriv.PublicKey().Value().Bytes(), public.Get())
+
+	pkValue, err := public.Get()
+	require.NoError(t, err)
+
+	require.Equal(t, bronPriv.PublicKey().Value().Bytes(), pkValue)
 }
 
 func mustPrivateKeyWithBron(t *testing.T, networkID mina.NetworkID) *PrivateKey {
@@ -90,7 +94,7 @@ func mustPrivateKeyWithBron(t *testing.T, networkID mina.NetworkID) *PrivateKey 
 	return &PrivateKey{
 		value:              bronPriv.Value().Bytes(),
 		bronCompatiblePriv: bronPriv,
-		NetworkID:          networkID,
+		networkID:          networkID,
 	}
 }
 
