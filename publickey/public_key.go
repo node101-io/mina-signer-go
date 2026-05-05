@@ -71,6 +71,17 @@ func (pk *PublicKey) String() string {
 	return hex.EncodeToString(pk.value)
 }
 
+// input public key string is expected to be hex encoded
+func DecodePubKeyFromString(publicKey string, networkID mina.NetworkID) (*PublicKey, error) {
+
+	pk, err := hex.DecodeString(publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewPublicKeyFromBytes(pk, networkID)
+}
+
 func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
 
 	point, err := pasta.NewPallasCurve().FromBytes(pk)
