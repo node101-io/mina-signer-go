@@ -6,6 +6,7 @@ import (
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
+	"github.com/node101-io/mina-signer-go/errors"
 	privatekey "github.com/node101-io/mina-signer-go/privatekey"
 	"github.com/node101-io/mina-signer-go/publickey"
 	localsignature "github.com/node101-io/mina-signer-go/signature"
@@ -71,7 +72,7 @@ func TestPublicKeyVerifyReturnsErrNilSignature(t *testing.T) {
 
 	validity, err := pk.Verify(nil, messageToSign)
 	require.False(t, validity)
-	require.ErrorIs(t, err, publickey.ErrNilSignature)
+	require.ErrorIs(t, err, errors.ErrNilSignature)
 }
 
 func TestPublicKeyVerifyAcceptsValidSignature(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
+	"github.com/node101-io/mina-signer-go/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,7 +31,7 @@ func TestSignNilPrivateKeyReturnsErrNilPrivateKey(t *testing.T) {
 
 	sig, err := privKey.Sign(hardcodedMsg)
 	require.Nil(t, sig)
-	require.ErrorIs(t, err, ErrNilPrivateKey)
+	require.ErrorIs(t, err, errors.ErrNilPrivateKey)
 }
 
 func TestDecodePrivateKeyBytesRejectsInvalidLength(t *testing.T) {
