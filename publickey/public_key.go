@@ -19,14 +19,14 @@ type PublicKey struct {
 	bronCompatiblePublic *mina.PublicKey
 }
 
-func (pk *PublicKey) Get() ([]byte, error) {
+func (pk *PublicKey) Bytes() ([]byte, error) {
 	if pk == nil {
 		return nil, ErrNilPublicKey
 	}
 	return pk.value, nil
 }
 
-func (pk *PublicKey) GetNetworkID() mina.NetworkID {
+func (pk *PublicKey) NetworkID() mina.NetworkID {
 	return pk.networkID
 }
 
@@ -40,7 +40,7 @@ func (pk *PublicKey) Verify(signature *signature.Signature, message string) (boo
 		return false, ErrNilSignature
 	}
 
-	sig, err := mina.DeserializeSignature(signature.Get())
+	sig, err := mina.DeserializeSignature(signature.Bytes())
 	if err != nil {
 		return false, err
 	}
@@ -71,7 +71,7 @@ func (pk *PublicKey) String() string {
 	return hex.EncodeToString(pk.value)
 }
 
-func DecodePublicKey(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
+func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
 
 	point, err := pasta.NewPallasCurve().FromBytes(pk)
 	if err != nil {

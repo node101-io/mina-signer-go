@@ -7,12 +7,10 @@ require (
 	golang.org/x/crypto v0.48.0 // indirect
 )
 
-require (
-	github.com/bronlabs/errs-go v0.2.1
-	github.com/stretchr/testify v1.11.1
-)
+require github.com/stretchr/testify v1.11.1
 
 require (
+	github.com/bronlabs/errs-go v0.2.1 // indirect
 	github.com/cronokirby/saferith v0.33.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect

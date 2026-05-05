@@ -42,7 +42,7 @@ func TestPublicKey(t *testing.T) {
 }
 
 func TestDecodePublicKeyRejectsInvalidBytes(t *testing.T) {
-	pk, err := publickey.DecodePublicKey([]byte{0x01, 0x02}, mina.MainNet)
+	pk, err := publickey.NewPublicKeyFromBytes([]byte{0x01, 0x02}, mina.MainNet)
 	require.Nil(t, pk)
 	require.Error(t, err)
 }
@@ -50,15 +50,15 @@ func TestDecodePublicKeyRejectsInvalidBytes(t *testing.T) {
 func TestDecodePublicKeyPreservesNetworkID(t *testing.T) {
 	rawPublicKey, _, _ := referenceFixture(t, mina.TestNet, messageToSign)
 
-	pk, err := publickey.DecodePublicKey(rawPublicKey, mina.TestNet)
+	pk, err := publickey.NewPublicKeyFromBytes(rawPublicKey, mina.TestNet)
 	require.NoError(t, err)
-	require.Equal(t, mina.TestNet, pk.GetNetworkID())
+	require.Equal(t, mina.TestNet, pk.NetworkID())
 }
 
 func TestPublicKeyGetAndString(t *testing.T) {
 	rawPublicKey, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
 
-	pkValue, err := pk.Get()
+	pkValue, err := pk.Bytes()
 	require.NoError(t, err)
 	require.NotNil(t, pkValue)
 
@@ -93,7 +93,7 @@ func TestPublicKeyVerifyRejectsWrongMessage(t *testing.T) {
 func TestPublicKeyVerifyRejectsMalformedSignature(t *testing.T) {
 	_, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
 
-	validity, err := pk.Verify(localsignature.DecodeSignature([]byte{0x01}), messageToSign)
+	validity, err := pk.Verify(localsignature.NewSignatureFromBytes([]byte{0x01}), messageToSign)
 	require.False(t, validity)
 	require.Error(t, err)
 }
@@ -101,7 +101,7 @@ func TestPublicKeyVerifyRejectsMalformedSignature(t *testing.T) {
 func TestPublicKeyVerifyRejectsMismatchedNetwork(t *testing.T) {
 	rawPublicKey, _, sig := referenceFixture(t, mina.MainNet, messageToSign)
 
-	testnetPublicKey, err := publickey.DecodePublicKey(rawPublicKey, mina.TestNet)
+	testnetPublicKey, err := publickey.NewPublicKeyFromBytes(rawPublicKey, mina.TestNet)
 	require.NoError(t, err)
 
 	validity, err := testnetPublicKey.Verify(sig, messageToSign)
@@ -135,8 +135,8 @@ func referenceFixture(t *testing.T, networkID mina.NetworkID, message string) ([
 
 	rawPublicKey := privKey.PublicKey().Value().Bytes()
 
-	pk, err := publickey.DecodePublicKey(rawPublicKey, networkID)
+	pk, err := publickey.NewPublicKeyFromBytes(rawPublicKey, networkID)
 	require.NoError(t, err)
 
-	return rawPublicKey, pk, localsignature.DecodeSignature(serialized)
+	return rawPublicKey, pk, localsignature.NewSignatureFromBytes(serialized)
 }
