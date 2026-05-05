@@ -63,12 +63,12 @@ func (privKey *PrivateKey) Sign(message string) (*signature.Signature, error) {
 		return nil, err
 	}
 
-	return signature.DecodeSignature(serialized), nil
+	return signature.NewSignatureFromBytes(serialized), nil
 
 }
 
 func (privKey *PrivateKey) ToPublicKey() (*publickey.PublicKey, error) {
-	pk, err := publickey.DecodePublicKey(privKey.bronCompatiblePriv.PublicKey().Value().Bytes(), privKey.networkID)
+	pk, err := publickey.NewPublicKeyFromBytes(privKey.bronCompatiblePriv.PublicKey().Value().Bytes(), privKey.networkID)
 	if err != nil {
 		return nil, err
 	}

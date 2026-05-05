@@ -8,7 +8,7 @@ type Signature struct {
 	value []byte
 }
 
-func (sig *Signature) Get() []byte {
+func (sig *Signature) Bytes() []byte {
 	return sig.value
 }
 
@@ -17,7 +17,7 @@ func (sig *Signature) String() string {
 	return hex.EncodeToString(sig.value)
 }
 
-func DecodeSignature(sig []byte) *Signature {
+func NewSignatureFromBytes(sig []byte) *Signature {
 	return &Signature{
 		value: sig,
 	}
