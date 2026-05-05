@@ -2,16 +2,13 @@ package publickey
 
 import (
 	"encoding/hex"
-	"errors"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/base/prng/pcg"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
+	"github.com/node101-io/mina-signer-go/errors"
 	"github.com/node101-io/mina-signer-go/signature"
 )
-
-var ErrNilSignature = errors.New("nil signature")
-var ErrNilPublicKey = errors.New("nil public key")
 
 type PublicKey struct {
 	value                []byte
@@ -21,7 +18,7 @@ type PublicKey struct {
 
 func (pk *PublicKey) Bytes() ([]byte, error) {
 	if pk == nil {
-		return nil, ErrNilPublicKey
+		return nil, errors.ErrNilPublicKey
 	}
 	return pk.value, nil
 }
@@ -33,11 +30,11 @@ func (pk *PublicKey) NetworkID() mina.NetworkID {
 func (pk *PublicKey) Verify(signature *signature.Signature, message string) (bool, error) {
 
 	if signature == nil {
-		return false, ErrNilSignature
+		return false, errors.ErrNilSignature
 	}
 
 	if pk == nil {
-		return false, ErrNilSignature
+		return false, errors.ErrNilSignature
 	}
 
 	sig, err := mina.DeserializeSignature(signature.Bytes())

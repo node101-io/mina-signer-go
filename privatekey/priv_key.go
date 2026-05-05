@@ -1,16 +1,12 @@
 package privatekey
 
 import (
-	"errors"
-
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
+	"github.com/node101-io/mina-signer-go/errors"
 	"github.com/node101-io/mina-signer-go/publickey"
 	"github.com/node101-io/mina-signer-go/signature"
 )
-
-var ErrNilPrivateKey = errors.New("nil private key")
-var ErrInternal = errors.New("internal error")
 
 type PrivateKey struct {
 	value              []byte
@@ -37,7 +33,7 @@ func NewPrivateKeyFromBytes(data [32]byte, networkID mina.NetworkID) (*PrivateKe
 func (privKey *PrivateKey) Sign(message string) (*signature.Signature, error) {
 
 	if privKey == nil {
-		return nil, ErrNilPrivateKey
+		return nil, errors.ErrNilPrivateKey
 	}
 
 	scheme, err := mina.NewScheme(privKey.networkID, privKey.bronCompatiblePriv)
@@ -73,7 +69,7 @@ func (privKey *PrivateKey) ToPublicKey() (*publickey.PublicKey, error) {
 		return nil, err
 	}
 	if pk == nil {
-		return nil, ErrInternal
+		return nil, errors.ErrInternal
 	}
 	return pk, err
 }
