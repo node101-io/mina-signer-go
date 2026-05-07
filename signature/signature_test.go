@@ -14,7 +14,10 @@ func TestDecodeSignatureGetAndString(t *testing.T) {
 		raw[i] = byte(i)
 	}
 
-	sig := signaturesdk.NewSignatureFromBytes(raw)
+	sig, err := signaturesdk.NewSignatureFromBytes(raw)
+	require.NotNil(t, sig)
+	require.NoError(t, err)
+
 	require.Equal(t, raw, sig.Bytes())
 	require.Equal(t, hex.EncodeToString(raw), sig.String())
 }

@@ -2,14 +2,13 @@ package signature
 
 import (
 	"encoding/hex"
+	"fmt"
+
+	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
 )
 
 type Signature struct {
 	value []byte
-}
-
-func (sig *Signature) Bytes() []byte {
-	return sig.value
 }
 
 // Hex Encoding
@@ -17,21 +16,37 @@ func (sig *Signature) String() string {
 	return hex.EncodeToString(sig.value)
 }
 
-// input sig string is expected to be hex encoded
-func DecodeSignatureFromString(sig string) (*Signature, error) {
+func (sig *Signature) Bytes() []byte {
+	if sig == nil {
+		return nil
+	}
+	return cloneBytes(sig.value)
+}
 
-	sigValue, err := hex.DecodeString(sig)
-	if err != nil {
+func NewSignatureFromBytes(sig []byte) (*Signature, error) {
+	if len(sig) != mina.SignatureSize {
+		return nil, fmt.Errorf("invalid signature length: got %d want %d", len(sig), mina.SignatureSize)
+	}
+
+	if _, err := mina.DeserializeSignature(sig); err != nil {
 		return nil, err
 	}
 
 	return &Signature{
-		value: sigValue,
+		value: cloneBytes(sig),
 	}, nil
 }
 
-func NewSignatureFromBytes(sig []byte) *Signature {
-	return &Signature{
-		value: sig,
+// input sig string is expected to be hex encoded
+func DecodeSignatureFromString(sig string) (*Signature, error) {
+
+	b, err := hex.DecodeString(sig)
+	if err != nil {
+		return nil, err
 	}
+	return NewSignatureFromBytes(b)
+}
+
+func cloneBytes(b []byte) []byte {
+	return append([]byte(nil), b...)
 }

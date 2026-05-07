@@ -101,7 +101,7 @@ func (privKey *PrivateKey) SignROI(msg *mina.ROInput) (*signature.Signature, err
 		return nil, err
 	}
 
-	return signature.NewSignatureFromBytes(serialized), nil
+	return signature.NewSignatureFromBytes(serialized)
 
 }
 
