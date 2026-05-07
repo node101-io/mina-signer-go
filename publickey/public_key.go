@@ -12,7 +12,6 @@ import (
 )
 
 type PublicKey struct {
-	value                []byte
 	networkID            mina.NetworkID
 	bronCompatiblePublic *mina.PublicKey
 }
@@ -59,7 +58,7 @@ func (pk *PublicKey) Verify(signature *signature.Signature, message string) (boo
 
 // Hex Encoding
 func (pk *PublicKey) String() string {
-	return hex.EncodeToString(pk.value)
+	return hex.EncodeToString(pk.bronCompatiblePublic.Value().Bytes())
 }
 
 // input public key string is expected to be hex encoded
@@ -81,7 +80,7 @@ func (pk *PublicKey) Bytes() ([]byte, error) {
 	if pk == nil {
 		return nil, errors.ErrNilPublicKey
 	}
-	return cloneBytes(pk.value), nil
+	return cloneBytes(pk.bronCompatiblePublic.Value().Bytes()), nil
 }
 
 func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
@@ -99,10 +98,7 @@ func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, err
 		return nil, err
 	}
 
-	raw := publicBron.Value().Bytes()
-
 	return &PublicKey{
-		value:                cloneBytes(raw),
 		networkID:            networkID,
 		bronCompatiblePublic: publicBron,
 	}, nil
