@@ -3,7 +3,6 @@ package poseidon
 import (
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/hashing/poseidon"
-	bronposeidon "github.com/bronlabs/bron-crypto/pkg/hashing/poseidon"
 )
 
 const bronRate int = 64
@@ -21,7 +20,7 @@ func NewPoseidon() *Poseidon {
 func (p *Poseidon) Hash(data []byte) ([]byte, error) {
 
 	field := pasta.NewPallasBaseField()
-	rate := bronposeidon.NewKimchi().Rate()
+	rate := poseidon.NewKimchi().Rate()
 
 	elements := make([]*pasta.PallasBaseFieldElement, 0, len(data))
 	for _, char := range data {
