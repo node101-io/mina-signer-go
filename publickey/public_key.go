@@ -2,6 +2,7 @@ package publickey
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/base/prng/pcg"
@@ -14,13 +15,6 @@ type PublicKey struct {
 	value                []byte
 	networkID            mina.NetworkID
 	bronCompatiblePublic *mina.PublicKey
-}
-
-func (pk *PublicKey) Bytes() ([]byte, error) {
-	if pk == nil {
-		return nil, errors.ErrNilPublicKey
-	}
-	return pk.value, nil
 }
 
 func (pk *PublicKey) NetworkID() mina.NetworkID {
@@ -79,7 +73,21 @@ func DecodePubKeyFromString(publicKey string, networkID mina.NetworkID) (*Public
 	return NewPublicKeyFromBytes(pk, networkID)
 }
 
+func cloneBytes(b []byte) []byte {
+	return append([]byte(nil), b...)
+}
+
+func (pk *PublicKey) Bytes() ([]byte, error) {
+	if pk == nil {
+		return nil, errors.ErrNilPublicKey
+	}
+	return cloneBytes(pk.value), nil
+}
+
 func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
+	if len(pk) != mina.PublicKeySize {
+		return nil, fmt.Errorf("invalid public key length: got %d want %d", len(pk), mina.PublicKeySize)
+	}
 
 	point, err := pasta.NewPallasCurve().FromBytes(pk)
 	if err != nil {
@@ -91,8 +99,10 @@ func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, err
 		return nil, err
 	}
 
+	raw := publicBron.Value().Bytes()
+
 	return &PublicKey{
-		value:                publicBron.Value().Bytes(),
+		value:                cloneBytes(raw),
 		networkID:            networkID,
 		bronCompatiblePublic: publicBron,
 	}, nil
