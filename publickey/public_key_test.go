@@ -64,7 +64,12 @@ func TestPublicKeyGetAndString(t *testing.T) {
 	require.NotNil(t, pkValue)
 
 	require.Equal(t, rawPublicKey, pkValue)
-	require.Equal(t, hex.EncodeToString(pkValue), pk.String())
+
+	pkStr, err := pk.String()
+	require.NoError(t, err)
+	require.NotNil(t, pkStr)
+
+	require.Equal(t, hex.EncodeToString(pkValue), pkStr)
 }
 
 func TestPublicKeyVerifyReturnsErrNilSignature(t *testing.T) {
