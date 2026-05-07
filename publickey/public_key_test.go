@@ -94,7 +94,11 @@ func TestPublicKeyVerifyRejectsWrongMessage(t *testing.T) {
 func TestPublicKeyVerifyRejectsMalformedSignature(t *testing.T) {
 	_, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
 
-	validity, err := pk.Verify(localsignature.NewSignatureFromBytes([]byte{0x01}), messageToSign)
+	sig, err := localsignature.NewSignatureFromBytes([]byte{0x01})
+	require.NotNil(t, sig)
+	require.NoError(t, err)
+
+	validity, err := pk.Verify(sig, messageToSign)
 	require.False(t, validity)
 	require.Error(t, err)
 }
@@ -139,5 +143,9 @@ func referenceFixture(t *testing.T, networkID mina.NetworkID, message string) ([
 	pk, err := publickey.NewPublicKeyFromBytes(rawPublicKey, networkID)
 	require.NoError(t, err)
 
-	return rawPublicKey, pk, localsignature.NewSignatureFromBytes(serialized)
+	newSig, err := localsignature.NewSignatureFromBytes(serialized)
+	require.NotNil(t, newSig)
+	require.NoError(t, err)
+
+	return rawPublicKey, pk, newSig
 }
