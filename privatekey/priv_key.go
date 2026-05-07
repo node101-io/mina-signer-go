@@ -9,7 +9,6 @@ import (
 )
 
 type PrivateKey struct {
-	value              []byte
 	bronCompatiblePriv *mina.PrivateKey
 	networkID          mina.NetworkID
 }
@@ -24,13 +23,59 @@ func NewPrivateKeyFromBytes(data [32]byte, networkID mina.NetworkID) (*PrivateKe
 		return nil, err
 	}
 	return &PrivateKey{
-		value:              privKey.Value().Bytes(),
 		bronCompatiblePriv: privKey,
 		networkID:          networkID,
 	}, nil
 }
 
-func (privKey *PrivateKey) Sign(message string) (*signature.Signature, error) {
+func (privKey *PrivateKey) SignString(msg string) (*signature.Signature, error) {
+
+	if privKey == nil {
+		return nil, errors.ErrNilPrivateKey
+	}
+
+	message := new(mina.ROInput).Init()
+	message.AddString(msg)
+
+	return privKey.SignROI(message)
+}
+
+func (privKey *PrivateKey) SignBytes(msg []byte) (*signature.Signature, error) {
+
+	if privKey == nil {
+		return nil, errors.ErrNilPrivateKey
+	}
+
+	message := new(mina.ROInput).Init()
+
+	for _, msgByte := range msg {
+
+		for i := 0; i < 8; i++ {
+
+			bit := (msgByte>>(7-i))&1 == 1
+			message.AddBits(bit)
+
+		}
+
+	}
+
+	return privKey.SignROI(message)
+}
+
+func (privKey *PrivateKey) SignFieldElement(msg *pasta.PallasBaseFieldElement) (*signature.Signature, error) {
+
+	if privKey == nil {
+		return nil, errors.ErrNilPrivateKey
+	}
+
+	message := new(mina.ROInput).Init()
+
+	message.AddFields(msg)
+
+	return privKey.SignROI(message)
+}
+
+func (privKey *PrivateKey) SignROI(msg *mina.ROInput) (*signature.Signature, error) {
 
 	if privKey == nil {
 		return nil, errors.ErrNilPrivateKey
@@ -40,9 +85,6 @@ func (privKey *PrivateKey) Sign(message string) (*signature.Signature, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	msg := new(mina.ROInput).Init()
-	msg.AddString(message)
 
 	signer, err := scheme.Signer(privKey.bronCompatiblePriv)
 	if err != nil {
@@ -64,6 +106,11 @@ func (privKey *PrivateKey) Sign(message string) (*signature.Signature, error) {
 }
 
 func (privKey *PrivateKey) ToPublicKey() (*publickey.PublicKey, error) {
+
+	if privKey == nil {
+		return nil, errors.ErrNilPrivateKey
+	}
+
 	pk, err := publickey.NewPublicKeyFromBytes(privKey.bronCompatiblePriv.PublicKey().Value().Bytes(), privKey.networkID)
 	if err != nil {
 		return nil, err
