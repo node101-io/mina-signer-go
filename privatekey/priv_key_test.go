@@ -18,18 +18,10 @@ var hardcodedPriv = [32]byte{
 
 const hardcodedMsg string = "mina-signer-go"
 
-func TestNewPrivateKeyFromBytesSetsFields(t *testing.T) {
-	privKey, err := NewPrivateKeyFromBytes(hardcodedPriv, mina.TestNet)
-	require.NoError(t, err)
-	require.NotNil(t, privKey)
-	require.Equal(t, mina.TestNet, privKey.GetNetworkID())
-	require.Len(t, privKey.value, len(hardcodedPriv))
-}
-
 func TestSignNilPrivateKeyReturnsErrNilPrivateKey(t *testing.T) {
 	var privKey *PrivateKey
 
-	sig, err := privKey.Sign(hardcodedMsg)
+	sig, err := privKey.SignString(hardcodedMsg)
 	require.Nil(t, sig)
 	require.ErrorIs(t, err, errors.ErrNilPrivateKey)
 }
@@ -47,18 +39,10 @@ func TestDecodePrivateKeyBytesAcceptsValidBytes(t *testing.T) {
 	require.Len(t, privKey.Value().Bytes(), len(hardcodedPriv))
 }
 
-func TestNewPrivateKeyFromBytesStoresDecodedValue(t *testing.T) {
-	expected := initBronPrivKey(t)
-
-	privKey, err := NewPrivateKeyFromBytes(hardcodedPriv, mina.MainNet)
-	require.NoError(t, err)
-	require.Equal(t, expected.Value().Bytes(), privKey.value)
-}
-
 func TestSignProducesVerifiableSignatureWhenBronCompatiblePrivateKeyIsPresent(t *testing.T) {
 	privKey := mustPrivateKeyWithBron(t, mina.MainNet)
 
-	sig, err := privKey.Sign(hardcodedMsg)
+	sig, err := privKey.SignString(hardcodedMsg)
 	require.NoError(t, err)
 	require.NotNil(t, sig)
 
@@ -74,7 +58,6 @@ func TestSignProducesVerifiableSignatureWhenBronCompatiblePrivateKeyIsPresent(t 
 func TestToPublicKeyMatchesBronPublicKeyWhenBronCompatiblePrivateKeyIsPresent(t *testing.T) {
 	bronPriv := initBronPrivKey(t)
 	privKey := &PrivateKey{
-		value:              bronPriv.Value().Bytes(),
 		bronCompatiblePriv: bronPriv,
 		networkID:          mina.MainNet,
 	}
@@ -93,7 +76,6 @@ func mustPrivateKeyWithBron(t *testing.T, networkID mina.NetworkID) *PrivateKey 
 
 	bronPriv := initBronPrivKey(t)
 	return &PrivateKey{
-		value:              bronPriv.Value().Bytes(),
 		bronCompatiblePriv: bronPriv,
 		networkID:          networkID,
 	}

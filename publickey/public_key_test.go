@@ -28,7 +28,7 @@ func TestPublicKey(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, privKey)
 
-	sig, err := privKey.Sign(messageToSign)
+	sig, err := privKey.SignString(messageToSign)
 	require.NoError(t, err)
 	require.NotNil(t, sig)
 
