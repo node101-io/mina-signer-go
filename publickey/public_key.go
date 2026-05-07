@@ -27,7 +27,7 @@ func (pk *PublicKey) Verify(signature *signature.Signature, message string) (boo
 	}
 
 	if pk == nil {
-		return false, errors.ErrNilSignature
+		return false, errors.ErrNilPublicKey
 	}
 
 	sig, err := mina.DeserializeSignature(signature.Bytes())
@@ -57,8 +57,13 @@ func (pk *PublicKey) Verify(signature *signature.Signature, message string) (boo
 }
 
 // Hex Encoding
-func (pk *PublicKey) String() string {
-	return hex.EncodeToString(pk.bronCompatiblePublic.Value().Bytes())
+func (pk *PublicKey) String() (string, error) {
+
+	if pk == nil {
+		return "", errors.ErrNilPublicKey
+	}
+
+	return hex.EncodeToString(pk.bronCompatiblePublic.Value().Bytes()), nil
 }
 
 // input public key string is expected to be hex encoded
