@@ -5,8 +5,6 @@ import (
 	"github.com/bronlabs/bron-crypto/pkg/hashing/poseidon"
 )
 
-const bronRate int = 64
-
 type Poseidon struct {
 	hasher *poseidon.Poseidon
 }
@@ -52,15 +50,28 @@ func (p *Poseidon) Hash(data []byte) ([]byte, error) {
 }
 
 func (p *Poseidon) HashWithPrefix(prefix string, data []byte) ([]byte, error) {
-	field := pasta.NewPallasBaseField()
-	rate := poseidon.NewKimchi().Rate()
 
-	prefixField, err := prefixToField(prefix)
+	dataFields, err := o1jsBytesToFields(data)
 	if err != nil {
 		return nil, err
 	}
 
-	dataFields, err := o1jsBytesToFields(data)
+	hash, err := p.HashFieldsWithPrefix(prefix, dataFields...)
+	if err != nil {
+		return nil, err
+	}
+
+	return hash.Bytes(), nil
+}
+
+func (p *Poseidon) HashFieldsWithPrefix(
+	prefix string,
+	fieldsToHash ...*pasta.PallasBaseFieldElement,
+) (*pasta.PallasBaseFieldElement, error) {
+	field := pasta.NewPallasBaseField()
+	rate := poseidon.NewKimchi().Rate()
+
+	prefixField, err := prefixToField(prefix)
 	if err != nil {
 		return nil, err
 	}
@@ -75,11 +86,11 @@ func (p *Poseidon) HashWithPrefix(prefix string, data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	if err := p.hasher.Update(padToRate(dataFields, rate)...); err != nil {
+	if err := p.hasher.Update(padToRate(fieldsToHash, rate)...); err != nil {
 		return nil, err
 	}
 
-	hash := p.hasher.Digest().Bytes()
+	hash := p.hasher.Digest()
 	p.hasher.Reset()
 	return hash, nil
 }
