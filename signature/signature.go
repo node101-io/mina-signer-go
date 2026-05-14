@@ -2,9 +2,9 @@ package signature
 
 import (
 	"encoding/hex"
-	"fmt"
 
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
+	"github.com/node101-io/mina-signer-go/errors"
 )
 
 type Signature struct {
@@ -25,7 +25,7 @@ func (sig *Signature) Bytes() []byte {
 
 func NewSignatureFromBytes(sig []byte) (*Signature, error) {
 	if len(sig) != mina.SignatureSize {
-		return nil, fmt.Errorf("invalid signature length: got %d want %d", len(sig), mina.SignatureSize)
+		return nil, errors.ErrInvalidSignatureLenght
 	}
 
 	if _, err := mina.DeserializeSignature(sig); err != nil {
