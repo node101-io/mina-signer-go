@@ -50,3 +50,36 @@ func (p *Poseidon) Hash(data []byte) ([]byte, error) {
 
 	return hash, nil
 }
+
+func (p *Poseidon) HashWithPrefix(prefix string, data []byte) ([]byte, error) {
+	field := pasta.NewPallasBaseField()
+	rate := poseidon.NewKimchi().Rate()
+
+	prefixField, err := prefixToField(prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	dataFields, err := o1jsBytesToFields(data)
+	if err != nil {
+		return nil, err
+	}
+
+	p.hasher.Reset()
+
+	prefixBlock := []*pasta.PallasBaseFieldElement{prefixField}
+	for len(prefixBlock)%rate != 0 {
+		prefixBlock = append(prefixBlock, field.Zero())
+	}
+	if err := p.hasher.Update(prefixBlock...); err != nil {
+		return nil, err
+	}
+
+	if err := p.hasher.Update(padToRate(dataFields, rate)...); err != nil {
+		return nil, err
+	}
+
+	hash := p.hasher.Digest().Bytes()
+	p.hasher.Reset()
+	return hash, nil
+}
