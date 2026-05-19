@@ -90,6 +90,66 @@ func TestPublicKeyVerifyAcceptsValidSignature(t *testing.T) {
 	require.True(t, validity)
 }
 
+func TestPublicKeyVerifyBytesAcceptsValidSignature(t *testing.T) {
+	privKey, err := privatekey.NewPrivateKeyFromBytes(validPrivateKeyBytes, mina.MainNet)
+	require.NoError(t, err)
+
+	message := []byte(messageToSign)
+
+	sig, err := privKey.SignBytes(message)
+	require.NoError(t, err)
+	require.NotNil(t, sig)
+
+	pk, err := privKey.ToPublicKey()
+	require.NoError(t, err)
+	require.NotNil(t, pk)
+
+	validity, err := pk.VerifyBytes(sig, message)
+	require.NoError(t, err)
+	require.True(t, validity)
+}
+
+func TestPublicKeyVerifyFieldElementAcceptsValidSignature(t *testing.T) {
+	privKey, err := privatekey.NewPrivateKeyFromBytes(validPrivateKeyBytes, mina.MainNet)
+	require.NoError(t, err)
+
+	message := pasta.NewPallasBaseField().FromUint64(42)
+
+	sig, err := privKey.SignFieldElement(message)
+	require.NoError(t, err)
+	require.NotNil(t, sig)
+
+	pk, err := privKey.ToPublicKey()
+	require.NoError(t, err)
+	require.NotNil(t, pk)
+
+	validity, err := pk.VerifyFieldElement(sig, message)
+	require.NoError(t, err)
+	require.True(t, validity)
+}
+
+func TestPublicKeyVerifyROIAcceptsValidSignature(t *testing.T) {
+	privKey, err := privatekey.NewPrivateKeyFromBytes(validPrivateKeyBytes, mina.MainNet)
+	require.NoError(t, err)
+
+	message := new(mina.ROInput).Init()
+	message.AddString(messageToSign)
+	message.AddFields(pasta.NewPallasBaseField().FromUint64(42))
+	message.AddBits(true, false, true)
+
+	sig, err := privKey.SignROI(message)
+	require.NoError(t, err)
+	require.NotNil(t, sig)
+
+	pk, err := privKey.ToPublicKey()
+	require.NoError(t, err)
+	require.NotNil(t, pk)
+
+	validity, err := pk.VerifyROI(sig, message)
+	require.NoError(t, err)
+	require.True(t, validity)
+}
+
 func TestPublicKeyVerifyRejectsWrongMessage(t *testing.T) {
 	_, pk, sig := referenceFixture(t, mina.MainNet, messageToSign)
 
