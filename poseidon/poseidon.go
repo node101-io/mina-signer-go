@@ -3,6 +3,7 @@ package poseidon
 import (
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/hashing/poseidon"
+	"github.com/node101-io/mina-signer-go/errors"
 )
 
 type Poseidon struct {
@@ -13,6 +14,19 @@ func NewPoseidon() *Poseidon {
 	return &Poseidon{
 		hasher: poseidon.NewKimchi(),
 	}
+}
+
+func (p *Poseidon) GetHasher() (*poseidon.Poseidon, error) {
+
+	if p == nil {
+		return nil, errors.ErrNilPoseidon
+	}
+
+	if p.hasher == nil {
+		return nil, errors.ErrNilHasher
+	}
+
+	return p.hasher, nil
 }
 
 func (p *Poseidon) Hash(data []byte) ([]byte, error) {

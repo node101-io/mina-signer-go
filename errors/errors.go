@@ -15,3 +15,5 @@ var ErrNilHasher = errors.New("nil hasher")
 var ErrNilMerkleList = errors.New("nil merkle list")
 
 var ErrNilMessage = errors.New("nil message")
+
+var ErrNilPoseidon = errors.New("nil poseidon")
