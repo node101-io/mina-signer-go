@@ -25,7 +25,7 @@ func (sig *Signature) Bytes() []byte {
 
 func NewSignatureFromBytes(sig []byte) (*Signature, error) {
 	if len(sig) != mina.SignatureSize {
-		return nil, errors.ErrInvalidSignatureLenght
+		return nil, errors.ErrInvalidSignatureLength
 	}
 
 	if _, err := mina.DeserializeSignature(sig); err != nil {
