@@ -38,7 +38,7 @@ func TestPublicKey(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, public)
 
-	validity, err := public.Verify(sig, messageToSign)
+	validity, err := public.VerifyString(sig, messageToSign)
 	require.NoError(t, err)
 	require.True(t, validity)
 
@@ -77,7 +77,7 @@ func TestPublicKeyGetAndString(t *testing.T) {
 func TestPublicKeyVerifyReturnsErrNilSignature(t *testing.T) {
 	_, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
 
-	validity, err := pk.Verify(nil, messageToSign)
+	validity, err := pk.VerifyString(nil, messageToSign)
 	require.False(t, validity)
 	require.ErrorIs(t, err, errors.ErrNilSignature)
 }
@@ -85,7 +85,7 @@ func TestPublicKeyVerifyReturnsErrNilSignature(t *testing.T) {
 func TestPublicKeyVerifyAcceptsValidSignature(t *testing.T) {
 	_, pk, sig := referenceFixture(t, mina.MainNet, messageToSign)
 
-	validity, err := pk.Verify(sig, messageToSign)
+	validity, err := pk.VerifyString(sig, messageToSign)
 	require.NoError(t, err)
 	require.True(t, validity)
 }
@@ -93,7 +93,7 @@ func TestPublicKeyVerifyAcceptsValidSignature(t *testing.T) {
 func TestPublicKeyVerifyRejectsWrongMessage(t *testing.T) {
 	_, pk, sig := referenceFixture(t, mina.MainNet, messageToSign)
 
-	validity, err := pk.Verify(sig, "different-message")
+	validity, err := pk.VerifyString(sig, "different-message")
 	require.False(t, validity)
 	require.Error(t, err)
 }
@@ -111,7 +111,7 @@ func TestPublicKeyVerifyRejectsMalformedSignature(t *testing.T) {
 	require.NotNil(t, sig)
 	require.NoError(t, err)
 
-	validity, err := pk.Verify(sig, messageToSign)
+	validity, err := pk.VerifyString(sig, messageToSign)
 	require.False(t, validity)
 	require.Error(t, err)
 }
@@ -122,7 +122,7 @@ func TestPublicKeyVerifyRejectsMismatchedNetwork(t *testing.T) {
 	testnetPublicKey, err := publickey.NewPublicKeyFromBytes(rawPublicKey, mina.TestNet)
 	require.NoError(t, err)
 
-	validity, err := testnetPublicKey.Verify(sig, messageToSign)
+	validity, err := testnetPublicKey.VerifyString(sig, messageToSign)
 	require.False(t, validity)
 	require.Error(t, err)
 }

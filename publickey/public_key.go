@@ -20,7 +20,69 @@ func (pk *PublicKey) NetworkID() mina.NetworkID {
 	return pk.networkID
 }
 
-func (pk *PublicKey) Verify(signature *signature.Signature, message string) (bool, error) {
+func (pk *PublicKey) VerifyString(signature *signature.Signature, message string) (bool, error) {
+
+	if pk == nil {
+		return false, errors.ErrNilPublicKey
+	}
+
+	if signature == nil {
+		return false, errors.ErrNilSignature
+	}
+
+	if message == "" {
+		return false, errors.ErrNilMessage
+	}
+
+	msg := new(mina.ROInput).Init()
+	msg.AddString(message)
+
+	return pk.VerifyROI(signature, msg)
+}
+
+func (pk *PublicKey) VerifyFieldElement(signature *signature.Signature, message *pasta.PallasBaseFieldElement) (bool, error) {
+
+	if pk == nil {
+		return false, errors.ErrNilPublicKey
+	}
+
+	if signature == nil {
+		return false, errors.ErrNilSignature
+	}
+
+	if message == nil {
+		return false, errors.ErrNilMessage
+	}
+
+	msg := new(mina.ROInput).Init()
+	msg.AddFields(message)
+
+	return pk.VerifyROI(signature, msg)
+}
+
+func (pk *PublicKey) VerifyBytes(signature *signature.Signature, message []byte) (bool, error) {
+
+	if pk == nil {
+		return false, errors.ErrNilPublicKey
+	}
+
+	if message == nil {
+		return false, errors.ErrNilMessage
+	}
+
+	msg := new(mina.ROInput).Init()
+
+	for _, msgByte := range message {
+		for i := 0; i < 8; i++ {
+			bit := (msgByte>>(7-i))&1 == 1
+			msg.AddBits(bit)
+		}
+	}
+
+	return pk.VerifyROI(signature, msg)
+}
+
+func (pk *PublicKey) VerifyROI(signature *signature.Signature, msg *mina.ROInput) (bool, error) {
 
 	if signature == nil {
 		return false, errors.ErrNilSignature
@@ -34,9 +96,6 @@ func (pk *PublicKey) Verify(signature *signature.Signature, message string) (boo
 	if err != nil {
 		return false, err
 	}
-
-	msg := new(mina.ROInput).Init()
-	msg.AddString(message)
 
 	scheme, err := mina.NewRandomisedScheme(pk.networkID, pcg.NewRandomised())
 	if err != nil {
