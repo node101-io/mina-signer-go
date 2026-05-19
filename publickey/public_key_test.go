@@ -67,11 +67,16 @@ func TestPublicKeyGetAndString(t *testing.T) {
 
 	require.Equal(t, rawPublicKey, pkValue)
 
-	pkStr, err := pk.String()
-	require.NoError(t, err)
+	pkStr := pk.String()
 	require.NotNil(t, pkStr)
 
-	require.Equal(t, hex.EncodeToString(pkValue), pkStr)
+	point, err := pasta.NewPallasCurve().FromBytes(rawPublicKey)
+	require.NoError(t, err)
+
+	bronPublicKey, err := mina.NewPublicKey(point)
+	require.NoError(t, err)
+
+	require.Equal(t, bronPublicKey.String(), pkStr)
 }
 
 func TestPublicKeyVerifyReturnsErrNilSignature(t *testing.T) {

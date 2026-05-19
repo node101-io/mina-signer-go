@@ -1,6 +1,8 @@
 package merklelist
 
 import (
+	"bytes"
+
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/node101-io/mina-signer-go/errors"
 	"github.com/node101-io/mina-signer-go/poseidon"
@@ -66,5 +68,5 @@ func (m *MerkleList) Root() []byte {
 		return nil
 	}
 
-	return append([]byte(nil), m.root...)
+	return bytes.Clone(m.root)
 }

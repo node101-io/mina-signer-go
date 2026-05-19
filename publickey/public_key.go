@@ -1,8 +1,10 @@
 package publickey
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/base/prng/pcg"
@@ -17,7 +19,7 @@ type PublicKey struct {
 }
 
 func (pk *PublicKey) NetworkID() mina.NetworkID {
-	return pk.networkID
+	return mina.NetworkID(strings.Clone(string(pk.networkID)))
 }
 
 func (pk *PublicKey) VerifyString(signature *signature.Signature, message string) (bool, error) {
@@ -115,14 +117,13 @@ func (pk *PublicKey) VerifyROI(signature *signature.Signature, msg *mina.ROInput
 	return true, nil
 }
 
-// Hex Encoding
-func (pk *PublicKey) String() (string, error) {
+func (pk *PublicKey) String() string {
 
 	if pk == nil {
-		return "", errors.ErrNilPublicKey
+		return ""
 	}
 
-	return hex.EncodeToString(pk.bronCompatiblePublic.Value().Bytes()), nil
+	return pk.bronCompatiblePublic.String()
 }
 
 // input public key string is expected to be hex encoded
@@ -136,15 +137,11 @@ func DecodePubKeyFromString(publicKey string, networkID mina.NetworkID) (*Public
 	return NewPublicKeyFromBytes(pk, networkID)
 }
 
-func cloneBytes(b []byte) []byte {
-	return append([]byte(nil), b...)
-}
-
 func (pk *PublicKey) Bytes() ([]byte, error) {
 	if pk == nil {
 		return nil, errors.ErrNilPublicKey
 	}
-	return cloneBytes(pk.bronCompatiblePublic.Value().Bytes()), nil
+	return bytes.Clone(pk.bronCompatiblePublic.Value().Bytes()), nil
 }
 
 func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
