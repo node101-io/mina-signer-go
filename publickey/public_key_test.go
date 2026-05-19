@@ -20,6 +20,8 @@ var validPrivateKeyBytes = [32]byte{
 	0xde, 0x63, 0x19, 0xaf, 0x0c, 0x5e, 0xb2, 0x90,
 }
 
+var ValidEncodedSig string = "fe3f451da33c28f1561c43be4dd9df50518b8f9b2128f26712eae57de3c0211f26becbe775facc626b6bd8a5c5a0cb183fed214242111d52954079cdb9f33c14"
+
 const messageToSign string = "mina-signer-go"
 
 func TestPublicKey(t *testing.T) {
@@ -99,7 +101,13 @@ func TestPublicKeyVerifyRejectsWrongMessage(t *testing.T) {
 func TestPublicKeyVerifyRejectsMalformedSignature(t *testing.T) {
 	_, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
 
-	sig, err := localsignature.NewSignatureFromBytes([]byte{0x01})
+	decodedSig, err := hex.DecodeString(ValidEncodedSig)
+	require.NoError(t, err)
+	require.NotNil(t, decodedSig)
+
+	decodedSig[len(decodedSig)-1] = byte(44)
+
+	sig, err := localsignature.NewSignatureFromBytes(decodedSig)
 	require.NotNil(t, sig)
 	require.NoError(t, err)
 
