@@ -37,12 +37,13 @@ func init() {
 
 }
 
-const prefix string = "pulsar"
-
-type TestVector struct {
+type testVector struct {
 	Input  []string `json:"input"`
 	Output string   `json:"output"`
 }
+
+const prefix string = "pulsar"
+const o1jsTestVectorFile string = "test_vectors.json"
 
 func reverseBytes(b []byte) []byte {
 	out := make([]byte, len(b))
@@ -52,14 +53,14 @@ func reverseBytes(b []byte) []byte {
 	return out
 }
 
-func ReadTestVectorsFile(path string) ([]TestVector, error) {
+func readTestVectorsFile(path string) ([]testVector, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 
-	var vectors []TestVector
+	var vectors []testVector
 
 	dec := json.NewDecoder(f)
 	if err := dec.Decode(&vectors); err != nil {
@@ -77,7 +78,7 @@ func TestPoseidonHashVectors(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, hasher)
 
-	vector, err := ReadTestVectorsFile("test_vectors.json")
+	vector, err := readTestVectorsFile(o1jsTestVectorFile)
 	require.NoError(t, err)
 	require.NotNil(t, vector)
 
