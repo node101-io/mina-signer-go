@@ -1,7 +1,8 @@
-package merkle
+package merklelist
 
 import (
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
+	"github.com/node101-io/mina-signer-go/errors"
 	"github.com/node101-io/mina-signer-go/poseidon"
 )
 
@@ -27,8 +28,13 @@ func NewMerkleList(prefix string) (*MerkleList, error) {
 }
 
 func (m *MerkleList) Append(element []byte) error {
-	if m == nil || m.hasher == nil {
-		return nil
+
+	if m == nil {
+		return errors.ErrNilMerkleList
+	}
+
+	if m.hasher == nil {
+		return errors.ErrNilHasher
 	}
 
 	field := pasta.NewPallasBaseField()
@@ -55,5 +61,10 @@ func (m *MerkleList) Append(element []byte) error {
 }
 
 func (m *MerkleList) Root() []byte {
-	return m.root
+
+	if m == nil {
+		return nil
+	}
+
+	return append([]byte(nil), m.root...)
 }

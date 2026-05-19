@@ -1,7 +1,6 @@
-package merkle
+package merklelist
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
@@ -9,6 +8,8 @@ import (
 )
 
 const prefix string = "pulsar"
+
+const validRoot string = "27371407983650058557167762723891068921859450186598884274366871258199362618277"
 
 func TestMerkleList(t *testing.T) {
 	merkleList, err := NewMerkleList(prefix)
@@ -23,6 +24,7 @@ func TestMerkleList(t *testing.T) {
 
 	rootField, err := field.FromBytes(merkleList.Root())
 	require.NoError(t, err)
+	require.NotNil(t, rootField)
 
-	fmt.Println(rootField.String())
+	require.Equal(t, rootField.String(), validRoot)
 }
