@@ -5,12 +5,37 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	minaposeidon "github.com/node101-io/mina-signer-go/poseidon"
 	"github.com/stretchr/testify/require"
 )
+
+var preGeneratedHashes = make(map[string]string)
+
+func init() {
+
+	// Note that these hashes are not official test vectors.
+	hashes := []string{
+		"23608266625797871040826122723800669223871240056197278634405806036556889433248",
+		"18146286282275317050852786039646244402878559860774406775641563417373390261699",
+		"25214055403451732710721922171450367779839014469616988132694858281638215621996",
+		"26431347576821735725721898577434109426312629679243614950359163921429170013399",
+		"24533484825816384350875706453714685830410901441209786907190693135525931689795",
+		"9046738680902586510432297093870232673359511002471493971225609043996631039530",
+		"491382324087868585616829488574348533752788271803529241884472760368326342994",
+		"27443117374193591451033882876415841583362734859190455361121968279138661852968",
+		"10961914516818006663852165456878415680533871924230200845565073682381474582772",
+		"14137951692495747281604853008431147305293375022877360908576136891591983235983",
+	}
+
+	for i, hash := range hashes {
+		preGeneratedHashes["message"+strconv.Itoa(i+1)] = hash
+	}
+
+}
 
 const prefix string = "pulsar"
 
@@ -86,6 +111,25 @@ func TestPoseidonHashVectors(t *testing.T) {
 		encoded := hex.EncodeToString(reverseBytes(hash.Bytes()))
 
 		require.Equal(t, vect.Output, encoded)
+	}
+
+}
+
+func TestPoseidonHashwithPrefix(t *testing.T) {
+
+	for msg, pregenHash := range preGeneratedHashes {
+
+		poseidon := minaposeidon.NewPoseidon()
+
+		hash, err := poseidon.HashWithPrefix(prefix, []byte(msg))
+		require.NoError(t, err)
+		require.NotNil(t, hash)
+
+		hashField, err := pasta.NewPallasBaseField().FromBytes(hash)
+		require.NoError(t, err)
+		require.NotNil(t, hashField)
+
+		require.Equal(t, pregenHash, hashField.String())
 	}
 
 }
