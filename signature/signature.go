@@ -1,6 +1,7 @@
 package signature
 
 import (
+	"bytes"
 	"encoding/hex"
 
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
@@ -20,7 +21,7 @@ func (sig *Signature) Bytes() []byte {
 	if sig == nil {
 		return nil
 	}
-	return cloneBytes(sig.value)
+	return bytes.Clone(sig.value)
 }
 
 func NewSignatureFromBytes(sig []byte) (*Signature, error) {
@@ -33,7 +34,7 @@ func NewSignatureFromBytes(sig []byte) (*Signature, error) {
 	}
 
 	return &Signature{
-		value: cloneBytes(sig),
+		value: bytes.Clone(sig),
 	}, nil
 }
 
@@ -45,8 +46,4 @@ func DecodeSignatureFromString(sig string) (*Signature, error) {
 		return nil, err
 	}
 	return NewSignatureFromBytes(b)
-}
-
-func cloneBytes(b []byte) []byte {
-	return append([]byte(nil), b...)
 }
