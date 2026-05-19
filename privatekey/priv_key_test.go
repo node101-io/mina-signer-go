@@ -92,3 +92,26 @@ func initBronPrivKey(t *testing.T) *mina.PrivateKey {
 
 	return privKey
 }
+func TestSignStringRejectsEmptyMessage(t *testing.T) {
+	privKey := mustPrivateKeyWithBron(t, mina.MainNet)
+
+	sig, err := privKey.SignString("")
+	require.Nil(t, sig)
+	require.ErrorIs(t, err, errors.ErrNilMessage)
+}
+
+func TestSignBytesRejectsNilMessage(t *testing.T) {
+	privKey := mustPrivateKeyWithBron(t, mina.MainNet)
+
+	sig, err := privKey.SignBytes(nil)
+	require.Nil(t, sig)
+	require.ErrorIs(t, err, errors.ErrNilMessage)
+}
+
+func TestSignFieldElementRejectsNilMessage(t *testing.T) {
+	privKey := mustPrivateKeyWithBron(t, mina.MainNet)
+
+	sig, err := privKey.SignFieldElement(nil)
+	require.Nil(t, sig)
+	require.ErrorIs(t, err, errors.ErrNilMessage)
+}
