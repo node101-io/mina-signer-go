@@ -34,6 +34,10 @@ func (privKey *PrivateKey) SignString(msg string) (*signature.Signature, error) 
 		return nil, errors.ErrNilPrivateKey
 	}
 
+	if msg == "" {
+		return nil, errors.ErrNilMessage
+	}
+
 	message := new(mina.ROInput).Init()
 	message.AddString(msg)
 
@@ -44,6 +48,10 @@ func (privKey *PrivateKey) SignBytes(msg []byte) (*signature.Signature, error) {
 
 	if privKey == nil {
 		return nil, errors.ErrNilPrivateKey
+	}
+
+	if msg == nil {
+		return nil, errors.ErrNilMessage
 	}
 
 	message := new(mina.ROInput).Init()
@@ -66,6 +74,10 @@ func (privKey *PrivateKey) SignFieldElement(msg *pasta.PallasBaseFieldElement) (
 
 	if privKey == nil {
 		return nil, errors.ErrNilPrivateKey
+	}
+
+	if msg == nil {
+		return nil, errors.ErrNilMessage
 	}
 
 	message := new(mina.ROInput).Init()

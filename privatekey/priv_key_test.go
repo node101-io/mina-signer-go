@@ -50,7 +50,7 @@ func TestSignProducesVerifiableSignatureWhenBronCompatiblePrivateKeyIsPresent(t 
 	require.NoError(t, err)
 	require.NotNil(t, public)
 
-	validity, err := public.Verify(sig, hardcodedMsg)
+	validity, err := public.VerifyString(sig, hardcodedMsg)
 	require.NoError(t, err)
 	require.True(t, validity)
 }
