@@ -1,4 +1,4 @@
-package minaaddress
+package address
 
 import (
 	"testing"
@@ -12,12 +12,12 @@ const validAddress = "B62qm1Jr1w4B5E8Sp8PT6YE2ZEf7GSCkFxnA8UiBnea5Qp8z2LFtUdy"
 func TestAddressMarshalUnmarshalRoundTrip(t *testing.T) {
 	original := NewAddress(validAddress)
 
-	encoded, err := original.Marshall()
+	encoded, err := original.Marshal()
 	require.NoError(t, err)
 	require.Len(t, encoded, 32)
 
 	decoded := &Address{}
-	err = decoded.Unmarshall(encoded)
+	err = decoded.Unmarshal(encoded)
 	require.NoError(t, err)
 
 	require.Equal(t, validAddress, decoded.addr)
@@ -26,14 +26,13 @@ func TestAddressMarshalUnmarshalRoundTrip(t *testing.T) {
 func TestAddressUnmarshalRejectsInvalidLength(t *testing.T) {
 	addr := &Address{}
 
-	err := addr.Unmarshall([]byte{0x01, 0x02})
-	require.Error(t, err)
-	require.ErrorContains(t, err, "invalid public key length")
+	err := addr.Unmarshal([]byte{0x01, 0x02})
+	require.ErrorIs(t, err, errors.ErrInvalidAddressLength)
 }
 func TestAddressNilAddress(t *testing.T) {
 
-	addr := &Address{}
+	var addr *Address
 
-	_, err := addr.Marshall()
+	_, err := addr.Marshal()
 	require.ErrorIs(t, err, errors.ErrNilAddress)
 }

@@ -2,15 +2,14 @@ package publickey
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/base/prng/pcg"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
+	"github.com/node101-io/mina-signer-go/address"
 	"github.com/node101-io/mina-signer-go/errors"
-	"github.com/node101-io/mina-signer-go/minaaddress"
 	"github.com/node101-io/mina-signer-go/signature"
 )
 
@@ -118,24 +117,14 @@ func (pk *PublicKey) VerifyROI(signature *signature.Signature, msg *mina.ROInput
 	return true, nil
 }
 
+// Debugging purposes only
 func (pk *PublicKey) String() string {
 
 	if pk == nil {
 		return ""
 	}
 
-	return pk.bronCompatiblePublic.String()
-}
-
-// input public key string is expected to be hex encoded
-func DecodePubKeyFromString(publicKey string, networkID mina.NetworkID) (*PublicKey, error) {
-
-	pk, err := hex.DecodeString(publicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewPublicKeyFromBytes(pk, networkID)
+	return strings.Clone(pk.bronCompatiblePublic.String())
 }
 
 func (pk *PublicKey) Bytes() ([]byte, error) {
@@ -166,12 +155,12 @@ func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, err
 	}, nil
 }
 
-func (pk *PublicKey) ToAddress() (*minaaddress.Address, error) {
+func (pk *PublicKey) ToAddress() (*address.Address, error) {
 
 	encoded, err := mina.EncodePublicKey(pk.bronCompatiblePublic)
 	if err != nil {
 		return nil, err
 	}
 
-	return minaaddress.NewAddress(string(encoded)), nil
+	return address.NewAddress(string(encoded)), nil
 }

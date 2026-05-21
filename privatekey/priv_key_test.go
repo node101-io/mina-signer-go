@@ -26,19 +26,6 @@ func TestSignNilPrivateKeyReturnsErrNilPrivateKey(t *testing.T) {
 	require.ErrorIs(t, err, errors.ErrNilPrivateKey)
 }
 
-func TestDecodePrivateKeyBytesRejectsInvalidLength(t *testing.T) {
-	privKey, err := decodePrivateKeyBytes([]byte{0x01, 0x02})
-	require.Nil(t, privKey)
-	require.Error(t, err)
-}
-
-func TestDecodePrivateKeyBytesAcceptsValidBytes(t *testing.T) {
-	privKey, err := decodePrivateKeyBytes(hardcodedPriv[:])
-	require.NoError(t, err)
-	require.NotNil(t, privKey)
-	require.Len(t, privKey.Value().Bytes(), len(hardcodedPriv))
-}
-
 func TestSignProducesVerifiableSignatureWhenBronCompatiblePrivateKeyIsPresent(t *testing.T) {
 	privKey := mustPrivateKeyWithBron(t, mina.MainNet)
 
