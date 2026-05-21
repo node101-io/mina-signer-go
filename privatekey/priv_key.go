@@ -93,6 +93,10 @@ func (privKey *PrivateKey) SignROI(msg *mina.ROInput) (*signature.Signature, err
 		return nil, errors.ErrNilPrivateKey
 	}
 
+	if msg == nil {
+		return nil, errors.ErrNilMessage
+	}
+
 	scheme, err := mina.NewScheme(privKey.networkID, privKey.bronCompatiblePriv)
 	if err != nil {
 		return nil, err
