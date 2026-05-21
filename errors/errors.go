@@ -17,3 +17,6 @@ var ErrNilMerkleList = errors.New("nil merkle list")
 var ErrNilMessage = errors.New("nil message")
 
 var ErrNilPoseidon = errors.New("nil poseidon")
+
+var ErrNilAddress = errors.New("nil address")
+var ErrInvalidAddressLength error = errors.New("invalid address length")
