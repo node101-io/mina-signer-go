@@ -10,6 +10,7 @@ import (
 	"github.com/bronlabs/bron-crypto/pkg/base/prng/pcg"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
 	"github.com/node101-io/mina-signer-go/errors"
+	"github.com/node101-io/mina-signer-go/minaaddress"
 	"github.com/node101-io/mina-signer-go/signature"
 )
 
@@ -163,4 +164,14 @@ func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, err
 		networkID:            networkID,
 		bronCompatiblePublic: publicBron,
 	}, nil
+}
+
+func (pk *PublicKey) ToAddress() (*minaaddress.Address, error) {
+
+	encoded, err := mina.EncodePublicKey(pk.bronCompatiblePublic)
+	if err != nil {
+		return nil, err
+	}
+
+	return minaaddress.NewAddress(string(encoded)), nil
 }
