@@ -70,3 +70,12 @@ func (m *MerkleList) Root() []byte {
 
 	return bytes.Clone(m.root)
 }
+
+func (m *MerkleList) Zero() []byte {
+
+	if m == nil {
+		return nil
+	}
+
+	return pasta.NewPallasBaseField().Zero().Bytes()
+}
