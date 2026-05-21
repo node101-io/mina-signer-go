@@ -1,4 +1,4 @@
-package poseidon_test
+package poseidon
 
 import (
 	"crypto/rand"
@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
-	minaposeidon "github.com/node101-io/mina-signer-go/poseidon"
 	"github.com/stretchr/testify/require"
 )
 
@@ -73,9 +72,9 @@ func readTestVectorsFile(path string) ([]testVector, error) {
 
 func TestPoseidonHashVectors(t *testing.T) {
 
-	poseidon := minaposeidon.NewPoseidon()
+	poseidon := NewPoseidon()
 
-	hasher, err := poseidon.GetHasher()
+	hasher, err := poseidon.getHasher()
 	require.NoError(t, err)
 	require.NotNil(t, hasher)
 
@@ -121,7 +120,7 @@ func TestPoseidonHashwithPrefix(t *testing.T) {
 
 	for msg, pregenHash := range preGeneratedHashes {
 
-		poseidon := minaposeidon.NewPoseidon()
+		poseidon := NewPoseidon()
 
 		hash, err := poseidon.HashWithPrefix(prefix, []byte(msg))
 		require.NoError(t, err)
@@ -143,7 +142,7 @@ func TestHashDivisibleByBronRate(t *testing.T) {
 	_, err := rand.Read(b)
 	require.NoError(t, err)
 
-	poseidon := minaposeidon.NewPoseidon()
+	poseidon := NewPoseidon()
 
 	hash, err := poseidon.Hash(b)
 	require.NoError(t, err)
@@ -157,7 +156,7 @@ func TestHashNotDivisibleByBronRate(t *testing.T) {
 	_, err := rand.Read(b)
 	require.NoError(t, err)
 
-	poseidon := minaposeidon.NewPoseidon()
+	poseidon := NewPoseidon()
 
 	hash, err := poseidon.Hash(b)
 	require.NoError(t, err)
