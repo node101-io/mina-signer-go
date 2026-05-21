@@ -2,21 +2,26 @@ package errors
 
 import "errors"
 
-var ErrNilSignature = errors.New("nil signature")
-var ErrInvalidSignatureLength error = errors.New("invalid signature length")
+var (
+	ErrNilSignature = errors.New("nil signature")
 
-var ErrNilPublicKey = errors.New("nil public key")
+	ErrInvalidSignatureLength = errors.New("invalid signature length")
 
-var ErrNilPrivateKey = errors.New("nil private key")
-var ErrInternal = errors.New("internal error")
+	ErrNilPublicKey = errors.New("nil public key")
 
-var ErrNilHasher = errors.New("nil hasher")
+	ErrNilPrivateKey = errors.New("nil private key")
 
-var ErrNilMerkleList = errors.New("nil merkle list")
+	ErrInternal = errors.New("internal error")
 
-var ErrNilMessage = errors.New("nil message")
+	ErrNilHasher = errors.New("nil hasher")
 
-var ErrNilPoseidon = errors.New("nil poseidon")
+	ErrNilMerkleList = errors.New("nil merkle list")
 
-var ErrNilAddress = errors.New("nil address")
-var ErrInvalidAddressLength error = errors.New("invalid address length")
+	ErrNilMessage = errors.New("nil message")
+
+	ErrNilPoseidon = errors.New("nil poseidon")
+
+	ErrNilAddress = errors.New("nil address")
+
+	ErrInvalidAddressLength = errors.New("invalid address length")
+)

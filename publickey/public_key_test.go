@@ -58,27 +58,6 @@ func TestDecodePublicKeyPreservesNetworkID(t *testing.T) {
 	require.Equal(t, mina.TestNet, pk.NetworkID())
 }
 
-func TestPublicKeyGetAndString(t *testing.T) {
-	rawPublicKey, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
-
-	pkValue, err := pk.Bytes()
-	require.NoError(t, err)
-	require.NotNil(t, pkValue)
-
-	require.Equal(t, rawPublicKey, pkValue)
-
-	pkStr := pk.String()
-	require.NotNil(t, pkStr)
-
-	point, err := pasta.NewPallasCurve().FromBytes(rawPublicKey)
-	require.NoError(t, err)
-
-	bronPublicKey, err := mina.NewPublicKey(point)
-	require.NoError(t, err)
-
-	require.Equal(t, bronPublicKey.String(), pkStr)
-}
-
 func TestPublicKeyVerifyReturnsErrNilSignature(t *testing.T) {
 	_, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
 

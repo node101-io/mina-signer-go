@@ -1,4 +1,4 @@
-package minaaddress
+package address
 
 import (
 	"github.com/bronlabs/bron-crypto/pkg/base/base58"
@@ -17,7 +17,14 @@ func NewAddress(addr string) *Address {
 	}
 }
 
-func (addr *Address) Marshall() ([]byte, error) {
+func (addr *Address) String() string {
+	if addr == nil {
+		return ""
+	}
+	return addr.addr
+}
+
+func (addr *Address) Marshal() ([]byte, error) {
 
 	if addr == nil {
 		return nil, errors.ErrNilAddress
@@ -31,7 +38,7 @@ func (addr *Address) Marshall() ([]byte, error) {
 	return pk.Value().Bytes(), nil
 }
 
-func (addr *Address) Unmarshall(encoded []byte) error {
+func (addr *Address) Unmarshal(encoded []byte) error {
 
 	if len(encoded) != mina.PublicKeySize {
 		return errors.ErrInvalidAddressLength

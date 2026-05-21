@@ -18,10 +18,17 @@ func (priv *PrivateKey) GetNetworkID() mina.NetworkID {
 }
 
 func NewPrivateKeyFromBytes(data [32]byte, networkID mina.NetworkID) (*PrivateKey, error) {
-	privKey, err := decodePrivateKeyBytes(data[:])
+
+	scalar, err := pasta.NewPallasScalarField().FromBytes(data[:])
 	if err != nil {
 		return nil, err
 	}
+
+	privKey, err := mina.NewPrivateKey(scalar)
+	if err != nil {
+		return nil, err
+	}
+
 	return &PrivateKey{
 		bronCompatiblePriv: privKey,
 		networkID:          networkID,
@@ -135,14 +142,4 @@ func (privKey *PrivateKey) ToPublicKey() (*publickey.PublicKey, error) {
 		return nil, errors.ErrInternal
 	}
 	return pk, err
-}
-
-func decodePrivateKeyBytes(data []byte) (*mina.PrivateKey, error) {
-
-	scalar, err := pasta.NewPallasScalarField().FromBytes(data)
-	if err != nil {
-		return nil, err
-	}
-
-	return mina.NewPrivateKey(scalar)
 }
