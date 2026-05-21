@@ -16,7 +16,7 @@ func NewPoseidon() *Poseidon {
 	}
 }
 
-func (p *Poseidon) GetHasher() (*poseidon.Poseidon, error) {
+func (p *Poseidon) getHasher() (*poseidon.Poseidon, error) {
 
 	if p == nil {
 		return nil, errors.ErrNilPoseidon
