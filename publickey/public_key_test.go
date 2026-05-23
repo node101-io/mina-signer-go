@@ -171,6 +171,14 @@ func TestPublicKeyVerifyRejectsMismatchedNetwork(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestPublicKeyToAddressReturnsErrNilPublicKey(t *testing.T) {
+	var pk *publickey.PublicKey
+
+	addr, err := pk.ToAddress()
+	require.Nil(t, addr)
+	require.ErrorIs(t, err, errors.ErrNilPublicKey)
+}
+
 func referenceFixture(t *testing.T, networkID mina.NetworkID, message string) ([]byte, *publickey.PublicKey, *localsignature.Signature) {
 	t.Helper()
 

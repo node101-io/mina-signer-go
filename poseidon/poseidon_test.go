@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
+	"github.com/node101-io/mina-signer-go/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -162,4 +163,39 @@ func TestHashNotDivisibleByBronRate(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, hash)
 
+}
+
+func TestHashReturnsErrNilPoseidon(t *testing.T) {
+	var poseidon *Poseidon
+
+	hash, err := poseidon.Hash([]byte("message"))
+	require.Nil(t, hash)
+	require.ErrorIs(t, err, errors.ErrNilPoseidon)
+}
+
+func TestHashResetsDirtyHasherState(t *testing.T) {
+	input := []byte("message")
+
+	cleanPoseidon := NewPoseidon()
+	expected, err := cleanPoseidon.Hash(input)
+	require.NoError(t, err)
+
+	dirtyPoseidon := NewPoseidon()
+	field := pasta.NewPallasBaseField()
+	dirtyInputs := make([]*pasta.PallasBaseFieldElement, dirtyPoseidon.hasher.Rate())
+	dirtyInputs[0] = field.FromUint64(42)
+	for i := 1; i < len(dirtyInputs); i++ {
+		dirtyInputs[i] = field.Zero()
+	}
+
+	err = dirtyPoseidon.hasher.Update(dirtyInputs...)
+	require.NoError(t, err)
+
+	actual, err := dirtyPoseidon.Hash(input)
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
+
+	actual, err = dirtyPoseidon.Hash(input)
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
 }

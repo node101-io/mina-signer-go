@@ -56,7 +56,7 @@ func (m *MerkleList) Append(element []byte) error {
 		return err
 	}
 
-	m.root = nextRoot.Bytes()
+	m.root = nextRoot
 	m.state = append(m.state, m.root)
 
 	return nil
