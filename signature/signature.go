@@ -1,63 +1,49 @@
 package signature
 
 import (
-	"fmt"
-	"math/big"
-)
+	"bytes"
+	"encoding/hex"
 
-const (
-	// BigIntSize defines the byte size for each big.Int (R and S) in the signature.
-	// Pallas curve field elements and scalars are ~255 bits, fitting into 32 bytes.
-	BigIntSize = 32
-	// TotalSignatureSize is R (32 bytes) + S (32 bytes).
-	TotalSignatureSize = BigIntSize * 2
+	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
+	"github.com/node101-io/mina-signer-go/errors"
 )
 
 type Signature struct {
-	R *big.Int // Field element
-	S *big.Int // Scalar
+	value []byte
 }
 
-// MarshalBytes serializes the Signature into a byte slice.
-// The format is [R (32 bytes)][S (32 bytes)], totaling 64 bytes.
-func (sig *Signature) MarshalBytes() ([]byte, error) {
-	if sig == nil || sig.R == nil || sig.S == nil {
-		return nil, fmt.Errorf("cannot marshal Signature: R or S is nil")
-	}
-
-	out := make([]byte, TotalSignatureSize)
-
-	rBytes := sig.R.Bytes()
-	if len(rBytes) > BigIntSize {
-		return nil, fmt.Errorf("Signature.R is too large: got %d bytes, max %d bytes", len(rBytes), BigIntSize)
-	}
-	copy(out[BigIntSize-len(rBytes):BigIntSize], rBytes) // Left-pad R
-
-	sBytes := sig.S.Bytes()
-	if len(sBytes) > BigIntSize {
-		return nil, fmt.Errorf("Signature.S is too large: got %d bytes, max %d bytes", len(sBytes), BigIntSize)
-	}
-	copy(out[BigIntSize+(BigIntSize-len(sBytes)):], sBytes) // Left-pad S into the second half
-
-	return out, nil
+// Hex Encoding
+func (sig *Signature) String() string {
+	return hex.EncodeToString(sig.value)
 }
 
-// UnmarshalBytes deserializes data into the Signature.
-// data is expected to be TotalSignatureSize (64) bytes long.
-func (sig *Signature) UnmarshalBytes(data []byte) error {
-	if len(data) != TotalSignatureSize {
-		return fmt.Errorf("invalid data length for Signature: expected %d bytes, got %d bytes", TotalSignatureSize, len(data))
+func (sig *Signature) Bytes() []byte {
+	if sig == nil {
+		return nil
+	}
+	return bytes.Clone(sig.value)
+}
+
+func NewSignatureFromBytes(sig []byte) (*Signature, error) {
+	if len(sig) != mina.SignatureSize {
+		return nil, errors.ErrInvalidSignatureLength
 	}
 
-	if sig.R == nil {
-		sig.R = new(big.Int)
+	if _, err := mina.DeserializeSignature(sig); err != nil {
+		return nil, err
 	}
-	sig.R.SetBytes(data[0:BigIntSize])
 
-	if sig.S == nil {
-		sig.S = new(big.Int)
+	return &Signature{
+		value: bytes.Clone(sig),
+	}, nil
+}
+
+// input sig string is expected to be hex encoded
+func DecodeSignatureFromString(sig string) (*Signature, error) {
+
+	b, err := hex.DecodeString(sig)
+	if err != nil {
+		return nil, err
 	}
-	sig.S.SetBytes(data[BigIntSize:])
-
-	return nil
+	return NewSignatureFromBytes(b)
 }
