@@ -77,6 +77,9 @@ func prefixToField(prefix string) (*pasta.PallasBaseFieldElement, error) {
 func padToRate(xs []*pasta.PallasBaseFieldElement, rate int) []*pasta.PallasBaseFieldElement {
 	field := pasta.NewPallasBaseField()
 	out := append([]*pasta.PallasBaseFieldElement(nil), xs...)
+	if len(out) == 0 {
+		out = append(out, field.Zero())
+	}
 	for len(out)%rate != 0 {
 		out = append(out, field.Zero())
 	}
