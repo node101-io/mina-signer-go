@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
 	signaturesdk "github.com/node101-io/mina-signer-go/signature"
 	"github.com/stretchr/testify/require"
 )
@@ -22,4 +23,8 @@ func TestDecodeSignatureGetAndString(t *testing.T) {
 
 	require.Equal(t, decodedSig, sig.Bytes())
 	require.Equal(t, hex.EncodeToString(decodedSig), sig.String())
+}
+
+func TestSizeMatchesBronMina(t *testing.T) {
+	require.Equal(t, mina.SignatureSize, signaturesdk.Size())
 }
