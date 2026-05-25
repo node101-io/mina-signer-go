@@ -156,6 +156,9 @@ func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, err
 }
 
 func (pk *PublicKey) ToAddress() (*address.Address, error) {
+	if pk == nil {
+		return nil, errors.ErrNilPublicKey
+	}
 
 	encoded, err := mina.EncodePublicKey(pk.bronCompatiblePublic)
 	if err != nil {

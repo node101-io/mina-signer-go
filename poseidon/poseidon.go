@@ -30,9 +30,15 @@ func (p *Poseidon) getHasher() (*poseidon.Poseidon, error) {
 }
 
 func (p *Poseidon) Hash(data []byte) ([]byte, error) {
+	hasher, err := p.getHasher()
+	if err != nil {
+		return nil, err
+	}
+	hasher.Reset()
+	defer hasher.Reset()
 
 	field := pasta.NewPallasBaseField()
-	rate := poseidon.NewKimchi().Rate()
+	rate := hasher.Rate()
 
 	elements := make([]*pasta.PallasBaseFieldElement, 0, len(data))
 	for _, char := range data {
@@ -52,19 +58,14 @@ func (p *Poseidon) Hash(data []byte) ([]byte, error) {
 		encoded = append(encoded, element.Bytes()...)
 	}
 
-	_, err := p.hasher.Write(encoded)
+	_, err = hasher.Write(encoded)
 	if err != nil {
 		return nil, err
 	}
-	hash := p.hasher.Sum(nil)
-
-	p.hasher.Reset()
-
-	return hash, nil
+	return hasher.Sum(nil), nil
 }
 
 func (p *Poseidon) HashWithPrefix(prefix string, data []byte) ([]byte, error) {
-
 	dataFields, err := o1jsBytesToFields(data)
 	if err != nil {
 		return nil, err
@@ -75,36 +76,39 @@ func (p *Poseidon) HashWithPrefix(prefix string, data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return hash.Bytes(), nil
+	return hash, nil
 }
 
 func (p *Poseidon) HashFieldsWithPrefix(
 	prefix string,
 	fieldsToHash ...*pasta.PallasBaseFieldElement,
-) (*pasta.PallasBaseFieldElement, error) {
+) ([]byte, error) {
+	hasher, err := p.getHasher()
+	if err != nil {
+		return nil, err
+	}
+	hasher.Reset()
+	defer hasher.Reset()
+
 	field := pasta.NewPallasBaseField()
-	rate := poseidon.NewKimchi().Rate()
+	rate := hasher.Rate()
 
 	prefixField, err := prefixToField(prefix)
 	if err != nil {
 		return nil, err
 	}
 
-	p.hasher.Reset()
-
 	prefixBlock := []*pasta.PallasBaseFieldElement{prefixField}
 	for len(prefixBlock)%rate != 0 {
 		prefixBlock = append(prefixBlock, field.Zero())
 	}
-	if err := p.hasher.Update(prefixBlock...); err != nil {
+	if err := hasher.Update(prefixBlock...); err != nil {
 		return nil, err
 	}
 
-	if err := p.hasher.Update(padToRate(fieldsToHash, rate)...); err != nil {
+	if err := hasher.Update(padToRate(fieldsToHash, rate)...); err != nil {
 		return nil, err
 	}
 
-	hash := p.hasher.Digest()
-	p.hasher.Reset()
-	return hash, nil
+	return hasher.Digest().Bytes(), nil
 }
