@@ -13,6 +13,11 @@ type PrivateKey struct {
 	networkID          mina.NetworkID
 }
 
+// Size returns the size in bytes of a serialized Mina private key.
+func Size() int {
+	return mina.PrivateKeySize
+}
+
 func (priv *PrivateKey) GetNetworkID() mina.NetworkID {
 	return priv.networkID
 }

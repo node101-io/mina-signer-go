@@ -12,6 +12,11 @@ type Signature struct {
 	value []byte
 }
 
+// Size returns the size in bytes of a serialized Mina signature.
+func Size() int {
+	return mina.SignatureSize
+}
+
 // Hex Encoding
 func (sig *Signature) String() string {
 	return hex.EncodeToString(sig.value)
@@ -25,7 +30,7 @@ func (sig *Signature) Bytes() []byte {
 }
 
 func NewSignatureFromBytes(sig []byte) (*Signature, error) {
-	if len(sig) != mina.SignatureSize {
+	if len(sig) != Size() {
 		return nil, errors.ErrInvalidSignatureLength
 	}
 

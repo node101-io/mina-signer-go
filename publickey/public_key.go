@@ -18,6 +18,11 @@ type PublicKey struct {
 	bronCompatiblePublic *mina.PublicKey
 }
 
+// Size returns the size in bytes of a serialized Mina public key.
+func Size() int {
+	return mina.PublicKeySize
+}
+
 func (pk *PublicKey) NetworkID() mina.NetworkID {
 	return mina.NetworkID(strings.Clone(string(pk.networkID)))
 }
@@ -135,8 +140,8 @@ func (pk *PublicKey) Bytes() ([]byte, error) {
 }
 
 func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
-	if len(pk) != mina.PublicKeySize {
-		return nil, fmt.Errorf("invalid public key length: got %d want %d", len(pk), mina.PublicKeySize)
+	if len(pk) != Size() {
+		return nil, fmt.Errorf("invalid public key length: got %d want %d", len(pk), Size())
 	}
 
 	point, err := pasta.NewPallasCurve().FromBytes(pk)
