@@ -119,11 +119,6 @@ func (pk *PublicKey) VerifyROI(signature *signature.Signature, msg *mina.ROInput
 
 // Debugging purposes only
 func (pk *PublicKey) String() string {
-
-	if pk == nil {
-		return ""
-	}
-
 	return strings.Clone(pk.bronCompatiblePublic.String())
 }
 
