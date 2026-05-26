@@ -13,7 +13,7 @@ type Signature struct {
 	value []byte
 }
 
-// Hex Encoding
+// Debugging purposes only
 func (sig *Signature) String() string {
 	return strings.Clone(fmt.Sprint(sig.value))
 }
