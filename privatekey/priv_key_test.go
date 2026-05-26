@@ -56,8 +56,8 @@ func TestToPublicKeyMatchesBronPublicKeyWhenBronCompatiblePrivateKeyIsPresent(t 
 	public, err := privKey.ToPublicKey()
 	require.NoError(t, err)
 
-	pkValue, err := public.Bytes()
-	require.NoError(t, err)
+	pkValue := public.Bytes()
+	require.NotNil(t, pkValue)
 
 	require.Equal(t, bronPriv.PublicKey().Value().Bytes(), pkValue)
 }

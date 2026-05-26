@@ -1,6 +1,8 @@
 package privatekey
 
 import (
+	"strings"
+
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
 	"github.com/node101-io/mina-signer-go/errors"
@@ -19,7 +21,7 @@ func Size() int {
 }
 
 func (priv *PrivateKey) GetNetworkID() mina.NetworkID {
-	return priv.networkID
+	return mina.NetworkID(strings.Clone(string(priv.networkID)))
 }
 
 func NewPrivateKeyFromBytes(data [32]byte, networkID mina.NetworkID) (*PrivateKey, error) {
