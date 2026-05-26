@@ -124,19 +124,11 @@ func (pk *PublicKey) VerifyROI(signature *signature.Signature, msg *mina.ROInput
 
 // Debugging purposes only
 func (pk *PublicKey) String() string {
-
-	if pk == nil {
-		return ""
-	}
-
 	return strings.Clone(pk.bronCompatiblePublic.String())
 }
 
-func (pk *PublicKey) Bytes() ([]byte, error) {
-	if pk == nil {
-		return nil, errors.ErrNilPublicKey
-	}
-	return bytes.Clone(pk.bronCompatiblePublic.Value().Bytes()), nil
+func (pk *PublicKey) Bytes() []byte {
+	return bytes.Clone(pk.bronCompatiblePublic.Value().Bytes())
 }
 
 func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
