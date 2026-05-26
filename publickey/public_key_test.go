@@ -50,10 +50,6 @@ func TestDecodePublicKeyRejectsInvalidBytes(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestSizeMatchesBronMina(t *testing.T) {
-	require.Equal(t, mina.PublicKeySize, publickey.Size())
-}
-
 func TestDecodePublicKeyPreservesNetworkID(t *testing.T) {
 	rawPublicKey, _, _ := referenceFixture(t, mina.TestNet, messageToSign)
 

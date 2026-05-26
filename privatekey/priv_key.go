@@ -1,6 +1,8 @@
 package privatekey
 
 import (
+	"strings"
+
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
 	"github.com/node101-io/mina-signer-go/errors"
@@ -13,13 +15,8 @@ type PrivateKey struct {
 	networkID          mina.NetworkID
 }
 
-// Size returns the size in bytes of a serialized Mina private key.
-func Size() int {
-	return mina.PrivateKeySize
-}
-
 func (priv *PrivateKey) GetNetworkID() mina.NetworkID {
-	return priv.networkID
+	return mina.NetworkID(strings.Clone(string(priv.networkID)))
 }
 
 func NewPrivateKeyFromBytes(data [32]byte, networkID mina.NetworkID) (*PrivateKey, error) {

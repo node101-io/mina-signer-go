@@ -26,10 +26,6 @@ func TestSignNilPrivateKeyReturnsErrNilPrivateKey(t *testing.T) {
 	require.ErrorIs(t, err, errors.ErrNilPrivateKey)
 }
 
-func TestSizeMatchesBronMina(t *testing.T) {
-	require.Equal(t, mina.PrivateKeySize, Size())
-}
-
 func TestSignProducesVerifiableSignatureWhenBronCompatiblePrivateKeyIsPresent(t *testing.T) {
 	privKey := mustPrivateKeyWithBron(t, mina.MainNet)
 
@@ -56,10 +52,7 @@ func TestToPublicKeyMatchesBronPublicKeyWhenBronCompatiblePrivateKeyIsPresent(t 
 	public, err := privKey.ToPublicKey()
 	require.NoError(t, err)
 
-	pkValue, err := public.Bytes()
-	require.NoError(t, err)
-
-	require.Equal(t, bronPriv.PublicKey().Value().Bytes(), pkValue)
+	require.Equal(t, bronPriv.PublicKey().Value().Bytes(), public.Bytes())
 }
 
 func mustPrivateKeyWithBron(t *testing.T, networkID mina.NetworkID) *PrivateKey {
