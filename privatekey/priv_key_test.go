@@ -30,6 +30,31 @@ func TestSizeMatchesBronMina(t *testing.T) {
 	require.Equal(t, mina.PrivateKeySize, Size())
 }
 
+func TestValidateAcceptsValidPrivateKeyBytes(t *testing.T) {
+	require.NoError(t, Validate(hardcodedPriv[:]))
+}
+
+func TestValidateRejectsWrongPrivateKeyLength(t *testing.T) {
+	err := Validate([]byte{0x01, 0x02})
+
+	require.ErrorIs(t, err, errors.ErrInvalidPrivateKeyLength)
+}
+
+func TestValidateRejectsZeroPrivateKeyScalar(t *testing.T) {
+	var zeroPrivateKey [32]byte
+
+	require.Error(t, Validate(zeroPrivateKey[:]))
+}
+
+func TestNewPrivateKeyFromBytesRejectsZeroPrivateKeyScalar(t *testing.T) {
+	var zeroPrivateKey [32]byte
+
+	privKey, err := NewPrivateKeyFromBytes(zeroPrivateKey, mina.MainNet)
+
+	require.Nil(t, privKey)
+	require.Error(t, err)
+}
+
 func TestSignProducesVerifiableSignatureWhenBronCompatiblePrivateKeyIsPresent(t *testing.T) {
 	privKey := mustPrivateKeyWithBron(t, mina.MainNet)
 

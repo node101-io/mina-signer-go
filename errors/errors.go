@@ -9,7 +9,11 @@ var (
 
 	ErrNilPublicKey = errors.New("nil public key")
 
+	ErrInvalidPublicKeyLength = errors.New("invalid public key length")
+
 	ErrNilPrivateKey = errors.New("nil private key")
+
+	ErrInvalidPrivateKeyLength = errors.New("invalid private key length")
 
 	ErrInternal = errors.New("internal error")
 

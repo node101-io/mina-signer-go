@@ -20,18 +20,36 @@ func Size() int {
 	return mina.PrivateKeySize
 }
 
+// Validate checks whether data is a well-formed serialized Mina private key.
+func Validate(data []byte) error {
+	_, err := parsePrivateKey(data)
+	return err
+}
+
 func (priv *PrivateKey) GetNetworkID() mina.NetworkID {
 	return mina.NetworkID(strings.Clone(string(priv.networkID)))
 }
 
-func NewPrivateKeyFromBytes(data [32]byte, networkID mina.NetworkID) (*PrivateKey, error) {
+func parsePrivateKey(data []byte) (*mina.PrivateKey, error) {
+	if len(data) != Size() {
+		return nil, errors.ErrInvalidPrivateKeyLength
+	}
 
-	scalar, err := pasta.NewPallasScalarField().FromBytes(data[:])
+	scalar, err := pasta.NewPallasScalarField().FromBytes(data)
 	if err != nil {
 		return nil, err
 	}
 
 	privKey, err := mina.NewPrivateKey(scalar)
+	if err != nil {
+		return nil, err
+	}
+
+	return privKey, nil
+}
+
+func NewPrivateKeyFromBytes(data [32]byte, networkID mina.NetworkID) (*PrivateKey, error) {
+	privKey, err := parsePrivateKey(data[:])
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package publickey_test
 
 import (
+	"bytes"
 	"encoding/hex"
 	"testing"
 
@@ -46,6 +47,28 @@ func TestPublicKey(t *testing.T) {
 
 func TestDecodePublicKeyRejectsInvalidBytes(t *testing.T) {
 	pk, err := publickey.NewPublicKeyFromBytes([]byte{0x01, 0x02}, mina.MainNet)
+	require.Nil(t, pk)
+	require.Error(t, err)
+}
+
+func TestValidateAcceptsValidPublicKeyBytes(t *testing.T) {
+	rawPublicKey, _, _ := referenceFixture(t, mina.MainNet, messageToSign)
+
+	require.NoError(t, publickey.Validate(rawPublicKey))
+}
+
+func TestValidateRejectsShortPublicKeyBytes(t *testing.T) {
+	err := publickey.Validate([]byte{0x01, 0x02})
+
+	require.ErrorIs(t, err, errors.ErrInvalidPublicKeyLength)
+}
+
+func TestValidateAndDecodeRejectMalformedPublicKeyBytes(t *testing.T) {
+	malformed := bytes.Repeat([]byte{0xff}, publickey.Size())
+
+	require.Error(t, publickey.Validate(malformed))
+
+	pk, err := publickey.NewPublicKeyFromBytes(malformed, mina.MainNet)
 	require.Nil(t, pk)
 	require.Error(t, err)
 }
