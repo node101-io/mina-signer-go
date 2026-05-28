@@ -55,6 +55,44 @@ func TestNewPrivateKeyFromBytesRejectsZeroPrivateKeyScalar(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestPrivateKeyBytesReturnsSerializedPrivateKey(t *testing.T) {
+	privKey, err := NewPrivateKeyFromBytes(hardcodedPriv, mina.MainNet)
+	require.NoError(t, err)
+
+	require.Equal(t, hardcodedPriv[:], privKey.Bytes())
+}
+
+func TestPrivateKeyBytesRoundTrip(t *testing.T) {
+	privKey, err := NewPrivateKeyFromBytes(hardcodedPriv, mina.TestNet)
+	require.NoError(t, err)
+
+	raw := privKey.Bytes()
+	var rawPrivateKey [32]byte
+	copy(rawPrivateKey[:], raw)
+
+	roundTrip, err := NewPrivateKeyFromBytes(rawPrivateKey, privKey.GetNetworkID())
+	require.NoError(t, err)
+
+	require.Equal(t, mina.TestNet, roundTrip.GetNetworkID())
+	require.Equal(t, raw, roundTrip.Bytes())
+}
+
+func TestPrivateKeyBytesReturnsClone(t *testing.T) {
+	privKey, err := NewPrivateKeyFromBytes(hardcodedPriv, mina.MainNet)
+	require.NoError(t, err)
+
+	raw := privKey.Bytes()
+	raw[0] ^= 0xff
+
+	require.Equal(t, hardcodedPriv[:], privKey.Bytes())
+}
+
+func TestPrivateKeyBytesReturnsNilForNilPrivateKey(t *testing.T) {
+	var privKey *PrivateKey
+
+	require.Nil(t, privKey.Bytes())
+}
+
 func TestSignProducesVerifiableSignatureWhenBronCompatiblePrivateKeyIsPresent(t *testing.T) {
 	privKey := mustPrivateKeyWithBron(t, mina.MainNet)
 
