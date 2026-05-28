@@ -1,6 +1,7 @@
 package privatekey
 
 import (
+	"bytes"
 	"strings"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
@@ -28,6 +29,14 @@ func Validate(data []byte) error {
 
 func (priv *PrivateKey) GetNetworkID() mina.NetworkID {
 	return mina.NetworkID(strings.Clone(string(priv.networkID)))
+}
+
+func (privKey *PrivateKey) Bytes() []byte {
+	if privKey == nil {
+		return nil
+	}
+
+	return bytes.Clone(privKey.bronCompatiblePriv.Value().Bytes())
 }
 
 func parsePrivateKey(data []byte) (*mina.PrivateKey, error) {
