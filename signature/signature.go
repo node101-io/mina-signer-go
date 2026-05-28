@@ -18,6 +18,20 @@ func Size() int {
 	return mina.SignatureSize
 }
 
+// Validate checks whether sig is a well-formed serialized Mina signature.
+func Validate(sig []byte) error {
+	_, err := parseSignature(sig)
+	return err
+}
+
+func parseSignature(sig []byte) (*mina.Signature, error) {
+	if len(sig) != Size() {
+		return nil, errors.ErrInvalidSignatureLength
+	}
+
+	return mina.DeserializeSignature(sig)
+}
+
 // Debugging purposes only
 func (sig *Signature) String() string {
 	return strings.Clone(fmt.Sprint(sig.value))
@@ -31,11 +45,7 @@ func (sig *Signature) Bytes() []byte {
 }
 
 func NewSignatureFromBytes(sig []byte) (*Signature, error) {
-	if len(sig) != Size() {
-		return nil, errors.ErrInvalidSignatureLength
-	}
-
-	if _, err := mina.DeserializeSignature(sig); err != nil {
+	if _, err := parseSignature(sig); err != nil {
 		return nil, err
 	}
 

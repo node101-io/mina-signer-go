@@ -2,7 +2,6 @@ package publickey
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
@@ -21,6 +20,12 @@ type PublicKey struct {
 // Size returns the size in bytes of a serialized Mina public key.
 func Size() int {
 	return mina.PublicKeySize
+}
+
+// Validate checks whether pk is a well-formed serialized Mina public key.
+func Validate(pk []byte) error {
+	_, err := parsePublicKey(pk)
+	return err
 }
 
 func (pk *PublicKey) NetworkID() mina.NetworkID {
@@ -131,9 +136,9 @@ func (pk *PublicKey) Bytes() []byte {
 	return bytes.Clone(pk.bronCompatiblePublic.Value().Bytes())
 }
 
-func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
+func parsePublicKey(pk []byte) (*mina.PublicKey, error) {
 	if len(pk) != Size() {
-		return nil, fmt.Errorf("invalid public key length: got %d want %d", len(pk), Size())
+		return nil, errors.ErrInvalidPublicKeyLength
 	}
 
 	point, err := pasta.NewPallasCurve().FromBytes(pk)
@@ -142,6 +147,15 @@ func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, err
 	}
 
 	publicBron, err := mina.NewPublicKey(point)
+	if err != nil {
+		return nil, err
+	}
+
+	return publicBron, nil
+}
+
+func NewPublicKeyFromBytes(pk []byte, networkID mina.NetworkID) (*PublicKey, error) {
+	publicBron, err := parsePublicKey(pk)
 	if err != nil {
 		return nil, err
 	}
