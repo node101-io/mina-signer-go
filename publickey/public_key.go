@@ -133,6 +133,10 @@ func (pk *PublicKey) String() string {
 }
 
 func (pk *PublicKey) Bytes() []byte {
+	if pk == nil {
+		return nil
+	}
+
 	return bytes.Clone(pk.bronCompatiblePublic.Value().Bytes())
 }
 

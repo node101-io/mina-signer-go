@@ -206,6 +206,12 @@ func TestPublicKeyToAddressReturnsErrNilPublicKey(t *testing.T) {
 	require.ErrorIs(t, err, errors.ErrNilPublicKey)
 }
 
+func TestPublicKeyBytesReturnsNilForNilPublicKey(t *testing.T) {
+	var pk *publickey.PublicKey
+
+	require.Nil(t, pk.Bytes())
+}
+
 func referenceFixture(t *testing.T, networkID mina.NetworkID, message string) ([]byte, *publickey.PublicKey, *localsignature.Signature) {
 	t.Helper()
 
