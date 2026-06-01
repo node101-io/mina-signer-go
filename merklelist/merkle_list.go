@@ -15,7 +15,7 @@ type MerkleList struct {
 	hasher *poseidon.Poseidon
 }
 
-func NewMerkleList(prefix string) (*MerkleList, error) {
+func NewMerkleList(prefix string) *MerkleList {
 
 	zero := pasta.NewPallasBaseField().Zero()
 
@@ -24,6 +24,29 @@ func NewMerkleList(prefix string) (*MerkleList, error) {
 	return &MerkleList{
 		state:  [][]byte{},
 		root:   zero.Bytes(),
+		prefix: prefix,
+		hasher: poseidon,
+	}
+}
+
+func NewMerkleListFromRoot(prefix string, root []byte) (*MerkleList, error) {
+
+	poseidon := poseidon.NewPoseidon()
+
+	field := pasta.NewPallasBaseField()
+	if len(root) == 0 {
+		root = field.Zero().Bytes()
+	} else {
+		element, err := field.FromBytesBEReduce(root)
+		if err != nil {
+			return nil, err
+		}
+		root = element.Bytes()
+	}
+
+	return &MerkleList{
+		state:  [][]byte{},
+		root:   root,
 		prefix: prefix,
 		hasher: poseidon,
 	}, nil

@@ -12,6 +12,10 @@ import (
 
 const o1jsAlignmentVectorFile string = "../testdata/poseidon/o1js_alignment_vectors.json"
 
+const prefix string = "pulsar"
+
+var arbitraryDataToHash = []byte("arbitrary-data-to-hash")
+
 type o1jsAlignmentVectors struct {
 	O1JSVersion string             `json:"o1jsVersion"`
 	MerkleLists []merkleListVector `json:"merkleLists"`
@@ -70,8 +74,7 @@ func TestMerkleListMatchesO1JS(t *testing.T) {
 
 	for _, vector := range vectors.MerkleLists {
 		t.Run(vector.Name, func(t *testing.T) {
-			merkleList, err := NewMerkleList(vector.Prefix)
-			require.NoError(t, err)
+			merkleList := NewMerkleList(vector.Prefix)
 
 			for _, decimal := range vector.ElementsDecimal {
 				err := merkleList.Append(pallasFieldFromDecimal(t, decimal).Bytes())
@@ -81,4 +84,26 @@ func TestMerkleListMatchesO1JS(t *testing.T) {
 			require.Equal(t, vector.RootDecimal, pallasFieldDecimalFromBytes(t, merkleList.Root()))
 		})
 	}
+}
+
+func TestNewMerkleListFromRootDefaultsEmptyRootToZero(t *testing.T) {
+
+	newList, err := NewMerkleListFromRoot(prefix, nil)
+	require.NoError(t, err)
+	require.NotNil(t, newList)
+	require.Equal(t, pasta.NewPallasBaseField().Zero().Bytes(), newList.Root())
+
+}
+func TestCompareNewMerkleAndFromRoot(t *testing.T) {
+
+	original := NewMerkleList(prefix)
+	original.Append([]byte("append"))
+
+	newList, err := NewMerkleListFromRoot(prefix, original.Root())
+	require.NoError(t, err)
+	require.NotNil(t, newList)
+
+	original.Append(arbitraryDataToHash)
+	newList.Append(arbitraryDataToHash)
+	require.Equal(t, original.root, newList.Root())
 }
