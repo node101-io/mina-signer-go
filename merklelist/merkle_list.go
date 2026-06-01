@@ -29,6 +29,29 @@ func NewMerkleList(prefix string) *MerkleList {
 	}
 }
 
+func NewMerkleListFromRoot(prefix string, root []byte) (*MerkleList, error) {
+
+	poseidon := poseidon.NewPoseidon()
+
+	field := pasta.NewPallasBaseField()
+	if len(root) == 0 {
+		root = field.Zero().Bytes()
+	} else {
+		element, err := field.FromBytes(root)
+		if err != nil {
+			return nil, err
+		}
+		root = element.Bytes()
+	}
+
+	return &MerkleList{
+		state:  [][]byte{},
+		root:   root,
+		prefix: prefix,
+		hasher: poseidon,
+	}, nil
+}
+
 func (m *MerkleList) Append(element []byte) error {
 
 	if m == nil {
