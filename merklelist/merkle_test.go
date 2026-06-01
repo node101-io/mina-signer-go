@@ -70,8 +70,7 @@ func TestMerkleListMatchesO1JS(t *testing.T) {
 
 	for _, vector := range vectors.MerkleLists {
 		t.Run(vector.Name, func(t *testing.T) {
-			merkleList, err := NewMerkleList(vector.Prefix)
-			require.NoError(t, err)
+			merkleList := NewMerkleList(vector.Prefix)
 
 			for _, decimal := range vector.ElementsDecimal {
 				err := merkleList.Append(pallasFieldFromDecimal(t, decimal).Bytes())
