@@ -37,7 +37,7 @@ func NewMerkleListFromRoot(prefix string, root []byte) (*MerkleList, error) {
 	if len(root) == 0 {
 		root = field.Zero().Bytes()
 	} else {
-		element, err := field.FromBytes(root)
+		element, err := field.FromBytesBEReduce(root)
 		if err != nil {
 			return nil, err
 		}
