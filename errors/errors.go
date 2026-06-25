@@ -28,4 +28,6 @@ var (
 	ErrNilAddress = errors.New("nil address")
 
 	ErrInvalidAddressLength = errors.New("invalid address length")
+
+	ErrNilField = errors.New("nil field")
 )
