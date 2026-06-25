@@ -9,6 +9,7 @@ import (
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
 	"github.com/node101-io/mina-signer-go/address"
 	"github.com/node101-io/mina-signer-go/errors"
+	minafield "github.com/node101-io/mina-signer-go/field"
 	"github.com/node101-io/mina-signer-go/signature"
 )
 
@@ -48,26 +49,6 @@ func (pk *PublicKey) VerifyString(signature *signature.Signature, message string
 
 	msg := new(mina.ROInput).Init()
 	msg.AddString(message)
-
-	return pk.VerifyROI(signature, msg)
-}
-
-func (pk *PublicKey) VerifyFieldElement(signature *signature.Signature, message *pasta.PallasBaseFieldElement) (bool, error) {
-
-	if pk == nil {
-		return false, errors.ErrNilPublicKey
-	}
-
-	if signature == nil {
-		return false, errors.ErrNilSignature
-	}
-
-	if message == nil {
-		return false, errors.ErrNilMessage
-	}
-
-	msg := new(mina.ROInput).Init()
-	msg.AddFields(message)
 
 	return pk.VerifyROI(signature, msg)
 }
@@ -181,4 +162,62 @@ func (pk *PublicKey) ToAddress() (*address.Address, error) {
 	}
 
 	return address.NewAddress(string(encoded)), nil
+}
+
+func (pk *PublicKey) ToFields() (*minafield.FieldElement, *minafield.FieldElement, error) {
+	if pk == nil {
+		return nil, nil, errors.ErrNilPublicKey
+	}
+
+	point, err := pasta.NewPallasCurve().FromBytes(pk.Bytes())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	x, err := point.AffineX()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	y, err := point.AffineY()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	field := minafield.NewField()
+	xField, err := field.FromBytes(x.Bytes())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	isOdd := field.Zero()
+	if y.IsOdd() {
+		isOdd = field.One()
+	}
+
+	return xField, isOdd, nil
+}
+
+func (pk *PublicKey) VerifyField(signature *signature.Signature, message *minafield.FieldElement) (bool, error) {
+	if pk == nil {
+		return false, errors.ErrNilPublicKey
+	}
+
+	if signature == nil {
+		return false, errors.ErrNilSignature
+	}
+
+	if !message.IsValid() {
+		return false, errors.ErrNilMessage
+	}
+
+	raw, err := pasta.NewPallasBaseField().FromBytes(message.Bytes())
+	if err != nil {
+		return false, err
+	}
+
+	msg := new(mina.ROInput).Init()
+	msg.AddFields(raw)
+
+	return pk.VerifyROI(signature, msg)
 }
