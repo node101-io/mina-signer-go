@@ -8,6 +8,7 @@ import (
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
 	"github.com/node101-io/mina-signer-go/errors"
+	minafield "github.com/node101-io/mina-signer-go/field"
 	privatekey "github.com/node101-io/mina-signer-go/privatekey"
 	"github.com/node101-io/mina-signer-go/publickey"
 	localsignature "github.com/node101-io/mina-signer-go/signature"
@@ -125,8 +126,11 @@ func TestPublicKeyVerifyFieldElementAcceptsValidSignature(t *testing.T) {
 	require.NoError(t, err)
 
 	message := pasta.NewPallasBaseField().FromUint64(42)
+	fieldElement, err := minafield.NewFieldElement(message.Bytes())
+	require.NoError(t, err)
+	require.NotNil(t, fieldElement)
 
-	sig, err := privKey.SignFieldElement(message)
+	sig, err := privKey.SignFieldElement(fieldElement)
 	require.NoError(t, err)
 	require.NotNil(t, sig)
 
@@ -134,7 +138,7 @@ func TestPublicKeyVerifyFieldElementAcceptsValidSignature(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, pk)
 
-	validity, err := pk.VerifyFieldElement(sig, message)
+	validity, err := pk.VerifyField(sig, fieldElement)
 	require.NoError(t, err)
 	require.True(t, validity)
 }

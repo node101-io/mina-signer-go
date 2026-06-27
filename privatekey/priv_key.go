@@ -7,6 +7,7 @@ import (
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
 	"github.com/node101-io/mina-signer-go/errors"
+	minafield "github.com/node101-io/mina-signer-go/field"
 	"github.com/node101-io/mina-signer-go/publickey"
 	"github.com/node101-io/mina-signer-go/signature"
 )
@@ -111,19 +112,23 @@ func (privKey *PrivateKey) SignBytes(msg []byte) (*signature.Signature, error) {
 	return privKey.SignROI(message)
 }
 
-func (privKey *PrivateKey) SignFieldElement(msg *pasta.PallasBaseFieldElement) (*signature.Signature, error) {
+func (privKey *PrivateKey) SignFieldElement(msg *minafield.FieldElement) (*signature.Signature, error) {
 
 	if privKey == nil {
 		return nil, errors.ErrNilPrivateKey
 	}
 
-	if msg == nil {
+	if !msg.IsValid() {
 		return nil, errors.ErrNilMessage
 	}
 
-	message := new(mina.ROInput).Init()
+	raw, err := pasta.NewPallasBaseField().FromBytes(msg.Bytes())
+	if err != nil {
+		return nil, err
+	}
 
-	message.AddFields(msg)
+	message := new(mina.ROInput).Init()
+	message.AddFields(raw)
 
 	return privKey.SignROI(message)
 }

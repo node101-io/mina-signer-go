@@ -112,8 +112,7 @@ func TestPoseidonHashVectors(t *testing.T) {
 
 	poseidon := NewPoseidon()
 
-	hasher, err := poseidon.getHasher()
-	require.NoError(t, err)
+	hasher := poseidon.hasher
 	require.NotNil(t, hasher)
 
 	vector, err := readTestVectorsFile(officialPoseidonVectorFile)
