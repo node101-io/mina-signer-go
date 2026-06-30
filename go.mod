@@ -10,7 +10,7 @@ require (
 require github.com/stretchr/testify v1.11.1
 
 require (
-	github.com/bronlabs/errs-go v0.2.1 // indirect
+	github.com/bronlabs/errs-go v0.2.2 // indirect
 	github.com/cronokirby/saferith v0.33.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
@@ -21,3 +21,5 @@ require (
 	golang.org/x/sys v0.41.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/bronlabs/bron-crypto => github.com/korayakpinar/bron-crypto v0.0.0-20260628220036-35fbaccd4e5d
