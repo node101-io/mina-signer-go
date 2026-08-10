@@ -86,6 +86,61 @@ func TestDecodePublicKeyPreservesNetworkID(t *testing.T) {
 	require.Equal(t, mina.TestNet, pk.NetworkID())
 }
 
+func TestNewPublicKeyFromFieldElementRoundTripsPublicKey(t *testing.T) {
+	privKey, err := privatekey.NewPrivateKeyFromBytes(validPrivateKeyBytes, mina.MainNet)
+	require.NoError(t, err)
+
+	original, err := privKey.ToPublicKey()
+	require.NoError(t, err)
+	require.NotNil(t, original)
+
+	x, isOdd, err := original.ToFields()
+	require.NoError(t, err)
+	require.NotNil(t, x)
+	require.NotNil(t, isOdd)
+
+	reconstructed, err := publickey.NewPublicKeyFromFieldElement(x, !isOdd.IsZero(), mina.MainNet)
+	require.NoError(t, err)
+	require.NotNil(t, reconstructed)
+	require.Equal(t, mina.MainNet, reconstructed.NetworkID())
+	require.Equal(t, original.Bytes(), reconstructed.Bytes())
+
+	sig, err := privKey.SignString(messageToSign)
+	require.NoError(t, err)
+	require.NotNil(t, sig)
+
+	validity, err := reconstructed.VerifyString(sig, messageToSign)
+	require.NoError(t, err)
+	require.True(t, validity)
+}
+
+func TestNewPublicKeyFromFieldElementWithWrongParityRejectsSignature(t *testing.T) {
+	privKey, err := privatekey.NewPrivateKeyFromBytes(validPrivateKeyBytes, mina.MainNet)
+	require.NoError(t, err)
+
+	original, err := privKey.ToPublicKey()
+	require.NoError(t, err)
+	require.NotNil(t, original)
+
+	x, isOdd, err := original.ToFields()
+	require.NoError(t, err)
+	require.NotNil(t, x)
+	require.NotNil(t, isOdd)
+
+	reconstructed, err := publickey.NewPublicKeyFromFieldElement(x, isOdd.IsZero(), mina.MainNet)
+	require.NoError(t, err)
+	require.NotNil(t, reconstructed)
+	require.NotEqual(t, original.Bytes(), reconstructed.Bytes())
+
+	sig, err := privKey.SignString(messageToSign)
+	require.NoError(t, err)
+	require.NotNil(t, sig)
+
+	validity, err := reconstructed.VerifyString(sig, messageToSign)
+	require.False(t, validity)
+	require.Error(t, err)
+}
+
 func TestPublicKeyVerifyReturnsErrNilSignature(t *testing.T) {
 	_, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
 
