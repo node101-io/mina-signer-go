@@ -9,7 +9,6 @@ import (
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
 	"github.com/node101-io/mina-signer-go/address"
 	"github.com/node101-io/mina-signer-go/errors"
-	"github.com/node101-io/mina-signer-go/field"
 	minafield "github.com/node101-io/mina-signer-go/field"
 	"github.com/node101-io/mina-signer-go/signature"
 )
@@ -22,7 +21,7 @@ type PublicKey struct {
 // NewPublicKeyFromFieldElement reconstructs a public key from its affine
 // x-coordinate and the oddness of its y-coordinate.
 func NewPublicKeyFromFieldElement(
-	x *field.FieldElement,
+	x *minafield.FieldElement,
 	isOdd bool,
 	networkID mina.NetworkID,
 ) (*PublicKey, error) {
