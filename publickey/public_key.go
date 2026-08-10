@@ -19,6 +19,8 @@ type PublicKey struct {
 	bronCompatiblePublic *mina.PublicKey
 }
 
+// NewPublicKeyFromFieldElement reconstructs a public key from its affine
+// x-coordinate and the oddness of its y-coordinate.
 func NewPublicKeyFromFieldElement(
 	x *field.FieldElement,
 	isOdd bool,
