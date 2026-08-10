@@ -141,6 +141,38 @@ func TestNewPublicKeyFromFieldElementWithWrongParityRejectsSignature(t *testing.
 	require.Error(t, err)
 }
 
+func TestNewPublicKeyFromFieldElementRejectsMissingFieldElement(t *testing.T) {
+	tests := []struct {
+		name string
+		x    *minafield.FieldElement
+	}{
+		{name: "nil", x: nil},
+		{name: "zero value", x: new(minafield.FieldElement)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pk, err := publickey.NewPublicKeyFromFieldElement(tt.x, false, mina.MainNet)
+
+			require.Nil(t, pk)
+			require.ErrorIs(t, err, errors.ErrNilFieldElement)
+		})
+	}
+}
+
+func TestNewPublicKeyFromFieldElementRejectsCoordinateOutsideCurve(t *testing.T) {
+	// For Pallas, x=0 makes x^3+5 a non-residue, so it has no affine point.
+	x := minafield.NewField().Zero()
+	require.NotNil(t, x)
+
+	for _, isOdd := range []bool{false, true} {
+		pk, err := publickey.NewPublicKeyFromFieldElement(x, isOdd, mina.MainNet)
+
+		require.Nil(t, pk)
+		require.ErrorIs(t, err, errors.ErrInvalidXCoordinate)
+	}
+}
+
 func TestPublicKeyVerifyReturnsErrNilSignature(t *testing.T) {
 	_, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
 

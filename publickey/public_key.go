@@ -2,6 +2,7 @@ package publickey
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
@@ -27,22 +28,22 @@ func NewPublicKeyFromFieldElement(
 ) (*PublicKey, error) {
 
 	if !x.IsValid() {
-		return nil, errors.ErrInvalidXCoordinate
+		return nil, errors.ErrNilFieldElement
 	}
 
 	bronX, err := pasta.NewPallasBaseField().FromBytes(x.Bytes())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: decode field element: %v", errors.ErrInvalidXCoordinate, err)
 	}
 
 	point, err := pasta.NewPallasCurve().FromAffineX(bronX, isOdd)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: reconstruct affine point: %v", errors.ErrInvalidXCoordinate, err)
 	}
 
 	publicBron, err := mina.NewPublicKey(point)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: construct Mina public key: %v", errors.ErrInvalidXCoordinate, err)
 	}
 
 	return &PublicKey{
