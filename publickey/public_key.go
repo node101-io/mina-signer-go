@@ -90,7 +90,7 @@ func (pk *PublicKey) VerifyROI(signature *signature.Signature, msg *mina.ROInput
 		return false, err
 	}
 
-	scheme, err := mina.NewRandomisedScheme(pk.networkID, pcg.NewRandomised())
+	scheme, err := mina.NewModernRandomisedScheme(pk.networkID, pcg.NewRandomised())
 	if err != nil {
 		return false, err
 	}

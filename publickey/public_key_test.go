@@ -225,7 +225,7 @@ func referenceFixture(t *testing.T, networkID mina.NetworkID, message string) ([
 	privKey, err := mina.NewPrivateKey(scalar)
 	require.NoError(t, err)
 
-	scheme, err := mina.NewScheme(networkID, privKey)
+	scheme, err := mina.NewModernScheme(networkID, privKey)
 	require.NoError(t, err)
 
 	msg := new(mina.ROInput).Init()
