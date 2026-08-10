@@ -9,6 +9,7 @@ import (
 	"github.com/bronlabs/bron-crypto/pkg/signatures/schnorrlike/mina"
 	"github.com/node101-io/mina-signer-go/address"
 	"github.com/node101-io/mina-signer-go/errors"
+	"github.com/node101-io/mina-signer-go/field"
 	minafield "github.com/node101-io/mina-signer-go/field"
 	"github.com/node101-io/mina-signer-go/signature"
 )
@@ -16,6 +17,37 @@ import (
 type PublicKey struct {
 	networkID            mina.NetworkID
 	bronCompatiblePublic *mina.PublicKey
+}
+
+func NewPublicKeyFromFieldElement(
+	x *field.FieldElement,
+	isOdd bool,
+	networkID mina.NetworkID,
+) (*PublicKey, error) {
+
+	if !x.IsValid() {
+		return nil, errors.ErrInvalidXCoordinate
+	}
+
+	bronX, err := pasta.NewPallasBaseField().FromBytes(x.Bytes())
+	if err != nil {
+		return nil, err
+	}
+
+	point, err := pasta.NewPallasCurve().FromAffineX(bronX, isOdd)
+	if err != nil {
+		return nil, err
+	}
+
+	publicBron, err := mina.NewPublicKey(point)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PublicKey{
+		networkID:            networkID,
+		bronCompatiblePublic: publicBron,
+	}, nil
 }
 
 // Size returns the size in bytes of a serialized Mina public key.
