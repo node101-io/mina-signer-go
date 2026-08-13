@@ -30,4 +30,7 @@ var (
 	ErrInvalidAddressLength = errors.New("invalid address length")
 
 	ErrNilField = errors.New("nil field")
+
+	ErrNilFieldElement    = errors.New("nil field element")
+	ErrInvalidXCoordinate = errors.New("invalid x coordinate")
 )

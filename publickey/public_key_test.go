@@ -86,6 +86,93 @@ func TestDecodePublicKeyPreservesNetworkID(t *testing.T) {
 	require.Equal(t, mina.TestNet, pk.NetworkID())
 }
 
+func TestNewPublicKeyFromFieldElementRoundTripsPublicKey(t *testing.T) {
+	privKey, err := privatekey.NewPrivateKeyFromBytes(validPrivateKeyBytes, mina.MainNet)
+	require.NoError(t, err)
+
+	original, err := privKey.ToPublicKey()
+	require.NoError(t, err)
+	require.NotNil(t, original)
+
+	x, isOdd, err := original.ToFields()
+	require.NoError(t, err)
+	require.NotNil(t, x)
+	require.NotNil(t, isOdd)
+
+	reconstructed, err := publickey.NewPublicKeyFromFieldElement(x, !isOdd.IsZero(), mina.MainNet)
+	require.NoError(t, err)
+	require.NotNil(t, reconstructed)
+	require.Equal(t, mina.MainNet, reconstructed.NetworkID())
+	require.Equal(t, original.Bytes(), reconstructed.Bytes())
+
+	sig, err := privKey.SignString(messageToSign)
+	require.NoError(t, err)
+	require.NotNil(t, sig)
+
+	validity, err := reconstructed.VerifyString(sig, messageToSign)
+	require.NoError(t, err)
+	require.True(t, validity)
+}
+
+func TestNewPublicKeyFromFieldElementWithWrongParityRejectsSignature(t *testing.T) {
+	privKey, err := privatekey.NewPrivateKeyFromBytes(validPrivateKeyBytes, mina.MainNet)
+	require.NoError(t, err)
+
+	original, err := privKey.ToPublicKey()
+	require.NoError(t, err)
+	require.NotNil(t, original)
+
+	x, isOdd, err := original.ToFields()
+	require.NoError(t, err)
+	require.NotNil(t, x)
+	require.NotNil(t, isOdd)
+
+	reconstructed, err := publickey.NewPublicKeyFromFieldElement(x, isOdd.IsZero(), mina.MainNet)
+	require.NoError(t, err)
+	require.NotNil(t, reconstructed)
+	require.NotEqual(t, original.Bytes(), reconstructed.Bytes())
+
+	sig, err := privKey.SignString(messageToSign)
+	require.NoError(t, err)
+	require.NotNil(t, sig)
+
+	validity, err := reconstructed.VerifyString(sig, messageToSign)
+	require.False(t, validity)
+	require.Error(t, err)
+}
+
+func TestNewPublicKeyFromFieldElementRejectsMissingFieldElement(t *testing.T) {
+	tests := []struct {
+		name string
+		x    *minafield.FieldElement
+	}{
+		{name: "nil", x: nil},
+		{name: "zero value", x: new(minafield.FieldElement)},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pk, err := publickey.NewPublicKeyFromFieldElement(tt.x, false, mina.MainNet)
+
+			require.Nil(t, pk)
+			require.ErrorIs(t, err, errors.ErrNilFieldElement)
+		})
+	}
+}
+
+func TestNewPublicKeyFromFieldElementRejectsCoordinateOutsideCurve(t *testing.T) {
+	// For Pallas, x=0 makes x^3+5 a non-residue, so it has no affine point.
+	x := minafield.NewField().Zero()
+	require.NotNil(t, x)
+
+	for _, isOdd := range []bool{false, true} {
+		pk, err := publickey.NewPublicKeyFromFieldElement(x, isOdd, mina.MainNet)
+
+		require.Nil(t, pk)
+		require.ErrorIs(t, err, errors.ErrInvalidXCoordinate)
+	}
+}
+
 func TestPublicKeyVerifyReturnsErrNilSignature(t *testing.T) {
 	_, pk, _ := referenceFixture(t, mina.MainNet, messageToSign)
 

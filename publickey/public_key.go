@@ -2,6 +2,7 @@ package publickey
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 
 	"github.com/bronlabs/bron-crypto/pkg/base/curves/pasta"
@@ -16,6 +17,39 @@ import (
 type PublicKey struct {
 	networkID            mina.NetworkID
 	bronCompatiblePublic *mina.PublicKey
+}
+
+// NewPublicKeyFromFieldElement reconstructs a public key from its affine
+// x-coordinate and the oddness of its y-coordinate.
+func NewPublicKeyFromFieldElement(
+	x *minafield.FieldElement,
+	isOdd bool,
+	networkID mina.NetworkID,
+) (*PublicKey, error) {
+
+	if !x.IsValid() {
+		return nil, errors.ErrNilFieldElement
+	}
+
+	bronX, err := pasta.NewPallasBaseField().FromBytes(x.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("%w: decode field element: %v", errors.ErrInvalidXCoordinate, err)
+	}
+
+	point, err := pasta.NewPallasCurve().FromAffineX(bronX, isOdd)
+	if err != nil {
+		return nil, fmt.Errorf("%w: reconstruct affine point: %v", errors.ErrInvalidXCoordinate, err)
+	}
+
+	publicBron, err := mina.NewPublicKey(point)
+	if err != nil {
+		return nil, fmt.Errorf("%w: construct Mina public key: %v", errors.ErrInvalidXCoordinate, err)
+	}
+
+	return &PublicKey{
+		networkID:            networkID,
+		bronCompatiblePublic: publicBron,
+	}, nil
 }
 
 // Size returns the size in bytes of a serialized Mina public key.
